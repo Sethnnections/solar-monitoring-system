@@ -1,0 +1,190 @@
+<%- include('../partials/head', { title: 'Login' }); %>
+
+<style>
+    .login-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card-shadow {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+</style>
+
+<div class="min-h-screen flex items-center justify-center login-bg py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full">
+        <!-- Logo and Title -->
+        <div class="text-center mb-8">
+            <div class="inline-block p-4 bg-white rounded-2xl shadow-lg mb-4">
+                <i class="fas fa-solar-panel text-4xl text-blue-600"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white">
+                Solar Monitoring System
+            </h2>
+            <p class="mt-2 text-blue-100">
+                Kadidi Health Center, Lunzu
+            </p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl card-shadow p-8">
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Welcome Back</h3>
+                <p class="text-gray-600 mt-2">Please sign in to your account</p>
+            </div>
+
+            <form action="/login" method="POST" class="space-y-6" id="loginForm">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </div>
+                        <input 
+                            id="email" 
+                            name="email" 
+                            type="email" 
+                            autocomplete="email" 
+                            required 
+                            value="<%= email || '' %>"
+                            class="pl-10 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="you@example.com"
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input 
+                            id="password" 
+                            name="password" 
+                            type="password" 
+                            autocomplete="current-password" 
+                            required
+                            class="pl-10 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="••••••••"
+                        >
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input 
+                            id="remember-me" 
+                            name="remember-me" 
+                            type="checkbox" 
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        >
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+                            Remember me
+                        </label>
+                    </div>
+
+                    <div class="text-sm">
+                        <a href="/forgot-password" class="font-medium text-blue-600 hover:text-blue-500">
+                            Forgot your password?
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <button 
+                        type="submit" 
+                        id="loginButton"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
+                    >
+                        <span id="buttonText">Sign in</span>
+                        <i id="buttonSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Demo Credentials -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h4>
+                <div class="space-y-2">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 font-medium">Admin</p>
+                        <p class="text-xs text-gray-500">admin@kadidihealthcenter.org / Admin@123</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 font-medium">Technician</p>
+                        <p class="text-xs text-gray-500">john.banda@kadidihealthcenter.org / Technician@123</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-3 text-center">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i>
+                    Change passwords after first login
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-blue-100">
+                &copy; <%= new Date().getFullYear() %> Solar Monitoring System. 
+                Developed by Forward M. Msiska
+            </p>
+            <p class="text-xs text-blue-200 mt-1">
+                BSc Computing - University of Greenwich
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle password visibility
+    $('#togglePassword').click(function() {
+        const passwordField = $('#password');
+        const icon = $(this).find('i');
+        
+        if (passwordField.attr('type') === 'password') {
+            passwordField.attr('type', 'text');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            passwordField.attr('type', 'password');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+
+    // Form submission
+    $('#loginForm').submit(function(e) {
+        e.preventDefault();
+        
+        const button = $('#loginButton');
+        const buttonText = $('#buttonText');
+        const spinner = $('#buttonSpinner');
+        
+        // Show loading state
+        button.prop('disabled', true);
+        buttonText.text('Signing in...');
+        spinner.removeClass('hidden');
+        
+        // Submit form
+        this.submit();
+    });
+
+    // Auto-fill demo credentials for testing
+    $(document).ready(function() {
+        // Remove this in production
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('demo') === 'admin') {
+            $('#email').val('admin@kadidihealthcenter.org');
+            $('#password').val('Admin@123');
+        } else if (urlParams.get('demo') === 'technician') {
+            $('#email').val('john.banda@kadidihealthcenter.org');
+            $('#password').val('Technician@123');
+        }
+    });
+</script>
+
+<%- include('../partials/scripts'); %>

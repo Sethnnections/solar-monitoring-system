@@ -1,0 +1,115 @@
+<!-- Sidebar -->
+<aside class="bg-gray-800 text-white w-64 min-h-screen fixed left-0 top-0 pt-16 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out" id="sidebar">
+    <div class="p-4">
+        <!-- Navigation -->
+        <nav class="mt-6">
+            <div class="mb-8">
+                <h3 class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3">Main</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="/dashboard" class="flex items-center px-3 py-2 rounded-lg <%= currentPath === '/dashboard' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-tachometer-alt w-5 mr-3"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/live-data" class="flex items-center px-3 py-2 rounded-lg <%= currentPath.startsWith('/dashboard/live-data') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-bolt w-5 mr-3"></i>
+                            Live Data
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Monitoring Section -->
+            <div class="mb-8">
+                <h3 class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3">Monitoring</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="/alerts" class="flex items-center px-3 py-2 rounded-lg <%= currentPath.startsWith('/alerts') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-bell w-5 mr-3"></i>
+                            Alerts
+                            <% if (locals.unreadAlerts && locals.unreadAlerts > 0) { %>
+                                <span class="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    <%= locals.unreadAlerts > 9 ? '9+' : locals.unreadAlerts %>
+                                </span>
+                            <% } %>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/reports" class="flex items-center px-3 py-2 rounded-lg <%= currentPath.startsWith('/reports') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-chart-bar w-5 mr-3"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- System Management (Admin/Technician only) -->
+            <% if (isAdmin || isTechnician) { %>
+            <div class="mb-8">
+                <h3 class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3">System</h3>
+                <ul class="space-y-2">
+                    <% if (isAdmin) { %>
+                    <li>
+                        <a href="/users" class="flex items-center px-3 py-2 rounded-lg <%= currentPath.startsWith('/users') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-users w-5 mr-3"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <% } %>
+                    <li>
+                        <a href="/settings" class="flex items-center px-3 py-2 rounded-lg <%= currentPath.startsWith('/settings') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-cog w-5 mr-3"></i>
+                            Settings
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/maintenance" class="flex items-center px-3 py-2 rounded-lg <%= currentPath.startsWith('/maintenance') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %>">
+                            <i class="fas fa-tools w-5 mr-3"></i>
+                            Maintenance
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <% } %>
+            
+            <!-- Quick Actions -->
+            <div class="mb-8">
+                <h3 class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3">Quick Actions</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="/reports/api/reports/generate?type=daily" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white" onclick="return confirm('Generate daily report?')">
+                            <i class="fas fa-file-pdf w-5 mr-3"></i>
+                            Daily Report
+                        </a>
+                    </li>
+                    <% if (isAdmin || isTechnician) { %>
+                    <li>
+                        <a href="/alerts/api/alerts" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white">
+                            <i class="fas fa-plus w-5 mr-3"></i>
+                            New Alert
+                        </a>
+                    </li>
+                    <% } %>
+                </ul>
+            </div>
+            
+            <!-- System Info -->
+            <div class="mt-12 pt-4 border-t border-gray-700">
+                <div class="text-xs text-gray-400">
+                    <p class="mb-1">System Version: 1.0.0</p>
+                    <p>Last Updated: Today</p>
+                </div>
+            </div>
+        </nav>
+    </div>
+</aside>
+
+<!-- Mobile menu button -->
+<button id="mobileMenuButton" class="md:hidden fixed top-4 left-4 z-50 bg-blue-600 text-white p-2 rounded-lg shadow-lg">
+    <i class="fas fa-bars text-xl"></i>
+</button>
+
+<!-- Overlay for mobile menu -->
+<div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden hidden"></div>

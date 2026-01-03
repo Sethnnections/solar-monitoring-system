@@ -1,35 +1,89 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const path = require('path');
 const cors = require('cors');
+const flash = require('connect-flash');
 require('dotenv').config();
 
-// Import configurations
-const connectDB = require('./config/database');
-const sessionConfig = require('./config/session');
+// Import middleware
+const { addUserToLocals, checkSessionTimeout, corsOptions } = require('./middlewares/authMiddleware');
+const { requestLogger, securityHeaders, maintenanceMode } = require('./middlewares/errorMiddleware');
+const { errorHandler, notFoundHandler } = require('./middlewares/errorMiddleware');
 
 // Import routes
-const authRoutes = require('./routes/authRoutes');
-const apiRoutes = require('./routes/apiRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const alertRoutes = require('./routes/alertRoutes');
-const reportRoutes = require('./routes/reportRoutes');
-
-// Import middleware
-const errorHandler = require('./middlewares/errorMiddleware');
+const routes = require('./routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
+const connectDB = async () => {
+    try {
+        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/solar_monitoring', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        
+        console.log(` MongoDB Connected: ${conn.connection.host}`);
+        
+        // Connection event handlers
+        mongoose.connection.on('error', (err) => {
+            console.error(` MongoDB connection error: ${err}`);
+        });
+        
+        mongoose.connection.on('disconnected', () => {
+            console.log(' MongoDB disconnected');
+        });
+        
+        // Graceful shutdown
+        process.on('SIGINT', async () => {
+            await mongoose.connection.close();
+            console.log(' MongoDB connection closed due to app termination');
+            process.exit(0);
+        });
+        
+    } catch (error) {
+        console.error(` MongoDB connection failed: ${error.message}`);
+        process.exit(1);
+    }
+};
+
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(securityHeaders);
+app.use(maintenanceMode);
+app.use(requestLogger);
+
+// Session configuration
+const sessionConfig = {
+    secret: process.env.SESSION_SECRET || 'fallback-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        collectionName: 'sessions',
+        ttl: 7 * 24 * 60 * 60, // 7 days
+        autoRemove: 'native',
+    }),
+    cookie: {
+        maxAge: parseInt(process.env.SESSION_LIFETIME) || 1000 * 60 * 60 * 24 * 7, // 1 week
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+    },
+    name: 'solar_monitoring_session',
+};
+
 app.use(session(sessionConfig));
+app.use(checkSessionTimeout);
+app.use(flash());
+app.use(addUserToLocals);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -38,35 +92,31 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Routes
-app.use('/', authRoutes);
-app.use('/api', apiRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/alerts', alertRoutes);
-app.use('/reports', reportRoutes);
-
-// Home route
-app.get('/', (req, res) => {
-    if (req.session.user) {
-        res.redirect('/dashboard');
-    } else {
-        res.redirect('/login');
-    }
+// Global variables for views
+app.use((req, res, next) => {
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    res.locals.currentPath = req.path;
+    res.locals.appName = 'Solar Monitoring System';
+    res.locals.year = new Date().getFullYear();
+    next();
 });
+
+// Mount routes
+app.use('/', routes);
 
 // 404 handler
-app.use((req, res) => {
-    res.status(404).render('errors/404');
-});
+app.use(notFoundHandler);
 
 // Error handler (should be last middleware)
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(` Server running on port ${PORT}`);
     console.log(` Environment: ${process.env.NODE_ENV}`);
     console.log(` Access at: http://localhost:${PORT}`);
+    console.log(` API Documentation: http://localhost:${PORT}/api/docs`);
 });
 
 // Handle unhandled promise rejections
@@ -74,6 +124,21 @@ process.on('unhandledRejection', (err) => {
     console.error('Unhandled Promise Rejection:', err);
     // Close server & exit process
     server.close(() => process.exit(1));
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+        console.log('Process terminated');
+        process.exit(0);
+    });
 });
 
 module.exports = app; // For testing

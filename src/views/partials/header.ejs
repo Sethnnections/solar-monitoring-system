@@ -1,0 +1,105 @@
+<header class="bg-white shadow-md">
+    <div class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+            <!-- Logo and Brand -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i class="fas fa-solar-panel text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Solar Monitoring System</h1>
+                    <p class="text-sm text-gray-600">Kadidi Health Center, Lunzu</p>
+                </div>
+            </div>
+            
+            <!-- Right side: User info and notifications -->
+            <div class="flex items-center space-x-4">
+                <!-- System Status -->
+                <div class="hidden md:flex items-center space-x-2">
+                    <div class="text-sm">
+                        <span class="text-gray-600">Status:</span>
+                        <span id="systemStatus" class="ml-1 px-2 py-1 rounded-full text-xs font-semibold 
+                            <%= locals.systemStatus === 'healthy' ? 'bg-green-100 text-green-800' : 
+                               locals.systemStatus === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+                               'bg-red-100 text-red-800' %>">
+                            <%= locals.systemStatus || 'checking...' %>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Notifications Bell -->
+                <div class="relative">
+                    <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-blue-600 focus:outline-none">
+                        <i class="fas fa-bell text-xl"></i>
+                        <% if (locals.unreadAlerts && locals.unreadAlerts > 0) { %>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                <%= locals.unreadAlerts > 9 ? '9+' : locals.unreadAlerts %>
+                            </span>
+                        <% } %>
+                    </button>
+                    
+                    <!-- Notification Dropdown -->
+                    <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border">
+                        <div class="p-4 border-b">
+                            <h3 class="font-semibold text-gray-800">Notifications</h3>
+                            <p class="text-sm text-gray-600">Recent alerts and updates</p>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            <div id="notificationList" class="p-2">
+                                <!-- Notifications will be loaded here via AJAX -->
+                                <div class="text-center py-8 text-gray-500">
+                                    <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                                    <p>No new notifications</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-3 border-t bg-gray-50">
+                            <a href="/alerts" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View all alerts <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-blue-600"></i>
+                        </div>
+                        <div class="hidden md:block text-left">
+                            <p class="text-sm font-medium text-gray-800"><%= user.name %></p>
+                            <p class="text-xs text-gray-600 capitalize"><%= user.role %></p>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </button>
+                    
+                    <!-- User Dropdown Menu -->
+                    <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 border">
+                        <div class="p-3 border-b">
+                            <p class="font-medium text-gray-800"><%= user.name %></p>
+                            <p class="text-sm text-gray-600"><%= user.email %></p>
+                        </div>
+                        <div class="py-1">
+                            <a href="/dashboard" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-tachometer-alt w-5 mr-3"></i> Dashboard
+                            </a>
+                            <a href="/profile" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user w-5 mr-3"></i> My Profile
+                            </a>
+                            <% if (isAdmin) { %>
+                                <a href="/users" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-users w-5 mr-3"></i> User Management
+                                </a>
+                            <% } %>
+                            <div class="border-t my-1"></div>
+                            <a href="/logout" class="flex items-center px-4 py-2 text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt w-5 mr-3"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

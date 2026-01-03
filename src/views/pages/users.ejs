@@ -1,0 +1,643 @@
+<%- include('../partials/head', { title: 'User Management' }); %>
+<%- include('../partials/header'); %>
+<%- include('../partials/sidebar'); %>
+
+<!-- Main Content -->
+<main class="md:ml-64 pt-16 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
+                    <p class="text-gray-600">Manage system users and their permissions</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <a href="/register" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-user-plus mr-2"></i> Add New User
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Statistics -->
+        <% if (stats) { %>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Users</p>
+                        <p class="text-2xl font-bold text-gray-800"><%= stats.total %></p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Admins</p>
+                        <p class="text-2xl font-bold text-purple-600"><%= stats.byRole.admin %></p>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <i class="fas fa-user-shield text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Technicians</p>
+                        <p class="text-2xl font-bold text-green-600"><%= stats.byRole.technician %></p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <i class="fas fa-user-cog text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Active Users</p>
+                        <p class="text-2xl font-bold text-green-600"><%= stats.active %></p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <i class="fas fa-user-check text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+        
+        <!-- Filters and Search -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="p-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">Search & Filter</h2>
+            </div>
+            <div class="p-4">
+                <form id="searchForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                        <input type="text" name="search" value="<%= filters.search || '' %>"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Search by name, email, or phone">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                        <select name="role" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Roles</option>
+                            <% Object.values(userRoles).forEach(function(role) { %>
+                                <option value="<%= role %>" <%= filters.role === role ? 'selected' : '' %>>
+                                    <%= role.charAt(0).toUpperCase() + role.slice(1) %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                            Search Users
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Users Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Users 
+                    <% if (pagination) { %>
+                        <span class="text-sm font-normal text-gray-600">(<%= pagination.totalItems %> total)</span>
+                    <% } %>
+                </h2>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                User
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Contact
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Role & Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Created
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Last Login
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% if (users && users.length > 0) { %>
+                            <% users.forEach(function(user) { %>
+                                <tr class="hover:bg-gray-50" id="user-<%= user._id %>">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-10 h-10 rounded-full <%= user.role === 'admin' ? 'bg-purple-100' : 
+                                                                                user.role === 'technician' ? 'bg-green-100' : 
+                                                                                'bg-blue-100' %> flex items-center justify-center">
+                                                    <i class="fas <%= user.role === 'admin' ? 'fa-user-shield text-purple-600' : 
+                                                                   user.role === 'technician' ? 'fa-user-cog text-green-600' : 
+                                                                   'fa-user text-blue-600' %>"></i>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    <%= user.name %>
+                                                    <% if (user._id.toString() === locals.user.id) { %>
+                                                        <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
+                                                    <% } %>
+                                                </div>
+                                                <div class="text-sm text-gray-500">
+                                                    <%= user.email %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900"><%= user.email %></div>
+                                        <div class="text-sm text-gray-500"><%= user.phone || 'No phone' %></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex flex-col space-y-1">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                <%= user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                                                   user.role === 'technician' ? 'bg-green-100 text-green-800' : 
+                                                   'bg-blue-100 text-blue-800' %>">
+                                                <%= user.role %>
+                                            </span>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                <%= user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                                <%= user.isActive ? 'Active' : 'Inactive' %>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <%= helpers.formatDate(user.createdAt, false) %>
+                                        <div class="text-xs text-gray-400"><%= helpers.timeAgo(user.createdAt) %></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <% if (user.lastLogin) { %>
+                                            <%= helpers.formatDate(user.lastLogin, true) %>
+                                            <div class="text-xs text-gray-400"><%= helpers.timeAgo(user.lastLogin) %></div>
+                                        <% } else { %>
+                                            <span class="text-gray-400">Never</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <a href="#" onclick="editUser('<%= user._id %>')" 
+                                               class="text-blue-600 hover:text-blue-900"
+                                               title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <% if (user._id.toString() !== locals.user.id) { %>
+                                                <% if (user.isActive) { %>
+                                                    <a href="#" onclick="toggleUserStatus('<%= user._id %>', false)" 
+                                                       class="text-yellow-600 hover:text-yellow-900"
+                                                       title="Deactivate">
+                                                        <i class="fas fa-user-slash"></i>
+                                                    </a>
+                                                <% } else { %>
+                                                    <a href="#" onclick="toggleUserStatus('<%= user._id %>', true)" 
+                                                       class="text-green-600 hover:text-green-900"
+                                                       title="Activate">
+                                                        <i class="fas fa-user-check"></i>
+                                                    </a>
+                                                <% } %>
+                                                <a href="#" onclick="resetUserPassword('<%= user._id %>')" 
+                                                   class="text-purple-600 hover:text-purple-900"
+                                                   title="Reset Password">
+                                                    <i class="fas fa-key"></i>
+                                                </a>
+                                                <a href="#" onclick="deleteUser('<%= user._id %>')" 
+                                                   class="text-red-600 hover:text-red-900"
+                                                   title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
+                                    <h3 class="text-lg font-medium text-gray-900">No users found</h3>
+                                    <p class="text-gray-500 mt-1">Try adjusting your search filters</p>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if (pagination && pagination.totalPages > 1) { %>
+            <div class="px-6 py-4 border-t bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing <span class="font-medium"><%= (pagination.currentPage - 1) * 15 + 1 %></span>
+                        to <span class="font-medium"><%= Math.min(pagination.currentPage * 15, pagination.totalItems) %></span>
+                        of <span class="font-medium"><%= pagination.totalItems %></span> results
+                    </div>
+                    <div class="flex space-x-2">
+                        <% if (pagination.hasPrev) { %>
+                            <a href="?page=<%= pagination.prevPage %><%= filters.role ? '&role=' + filters.role : '' %><%= filters.search ? '&search=' + filters.search : '' %>" 
+                               class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Previous
+                            </a>
+                        <% } %>
+                        
+                        <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                            <% if (i === pagination.currentPage) { %>
+                                <span class="px-3 py-2 border border-blue-500 bg-blue-50 text-blue-600 rounded-md text-sm font-medium">
+                                    <%= i %>
+                                </span>
+                            <% } else if (i === 1 || i === pagination.totalPages || (i >= pagination.currentPage - 2 && i <= pagination.currentPage + 2)) { %>
+                                <a href="?page=<%= i %><%= filters.role ? '&role=' + filters.role : '' %><%= filters.search ? '&search=' + filters.search : '' %>" 
+                                   class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    <%= i %>
+                                </a>
+                            <% } else if (i === pagination.currentPage - 3 || i === pagination.currentPage + 3) { %>
+                                <span class="px-3 py-2 text-gray-500">...</span>
+                            <% } %>
+                        <% } %>
+                        
+                        <% if (pagination.hasNext) { %>
+                            <a href="?page=<%= pagination.nextPage %><%= filters.role ? '&role=' + filters.role : '' %><%= filters.search ? '&search=' + filters.search : '' %>" 
+                               class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Next
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</main>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Edit User</h3>
+        </div>
+        <form id="editUserForm" class="p-6 space-y-4">
+            <input type="hidden" id="editUserId" name="id">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input type="text" id="editUserName" name="name" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="editUserEmail" name="email" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input type="tel" id="editUserPhone" name="phone"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select id="editUserRole" name="role" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <% Object.values(userRoles).forEach(function(role) { %>
+                        <option value="<%= role %>"><%= role.charAt(0).toUpperCase() + role.slice(1) %></option>
+                    <% }); %>
+                </select>
+            </div>
+            
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" id="editUserActive" name="isActive" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-700">Active User</span>
+                </label>
+            </div>
+            
+            <div id="notificationPreferences" class="border-t pt-4 mt-4 hidden">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Notification Preferences</h4>
+                <div class="space-y-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="notificationPreferences[emailAlerts]" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Email Alerts</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="notificationPreferences[criticalAlerts]" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Critical Alerts</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="notificationPreferences[dailySummary]" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Daily Summary</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="notificationPreferences[weeklyReport]" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Weekly Report</span>
+                    </label>
+                </div>
+            </div>
+        </form>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+            <button type="button" id="cancelEditUser" class="px-4 py-2 text-gray-700 hover:text-gray-900">
+                Cancel
+            </button>
+            <button type="submit" form="editUserForm" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Update User
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Reset User Password</h3>
+        </div>
+        <form id="resetPasswordForm" class="p-6 space-y-4">
+            <input type="hidden" id="resetUserId" name="id">
+            
+            <div>
+                <p class="text-sm text-gray-600 mb-4">
+                    Enter a new password for this user. They will need to use this password to log in.
+                </p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input type="password" id="newPassword" name="newPassword" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Enter new password">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Confirm new password">
+            </div>
+        </form>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+            <button type="button" id="cancelResetPassword" class="px-4 py-2 text-gray-700 hover:text-gray-900">
+                Cancel
+            </button>
+            <button type="submit" form="resetPasswordForm" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Reset Password
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize users page
+    $(document).ready(function() {
+        setupEventListeners();
+    });
+    
+    // Set up event listeners
+    function setupEventListeners() {
+        // Search form submission
+        $('#searchForm').submit(function(e) {
+            e.preventDefault();
+            const formData = $(this).serialize();
+            window.location.href = '?' + formData;
+        });
+        
+        // Edit user form submission
+        $('#editUserForm').submit(function(e) {
+            e.preventDefault();
+            updateUser($(this).serializeArray());
+        });
+        
+        // Cancel edit user
+        $('#cancelEditUser').click(function() {
+            $('#editUserModal').addClass('hidden');
+            $('#editUserForm')[0].reset();
+        });
+        
+        // Reset password form submission
+        $('#resetPasswordForm').submit(function(e) {
+            e.preventDefault();
+            const userId = $('#resetUserId').val();
+            const newPassword = $('#newPassword').val();
+            const confirmPassword = $('#confirmPassword').val();
+            
+            if (newPassword !== confirmPassword) {
+                toastr.error('Passwords do not match');
+                return;
+            }
+            
+            resetUserPassword(userId, newPassword, confirmPassword);
+        });
+        
+        // Cancel reset password
+        $('#cancelResetPassword').click(function() {
+            $('#resetPasswordModal').addClass('hidden');
+            $('#resetPasswordForm')[0].reset();
+        });
+    }
+    
+    // Edit user
+    window.editUser = function(userId) {
+        // Fetch user data
+        $.ajax({
+            url: `/users/api/users/${userId}`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const user = response.data;
+                    
+                    // Fill form
+                    $('#editUserId').val(user._id);
+                    $('#editUserName').val(user.name);
+                    $('#editUserEmail').val(user.email);
+                    $('#editUserPhone').val(user.phone || '');
+                    $('#editUserRole').val(user.role);
+                    $('#editUserActive').prop('checked', user.isActive);
+                    
+                    // Show notification preferences section
+                    if (user.notificationPreferences) {
+                        $('#notificationPreferences').removeClass('hidden');
+                        $('input[name="notificationPreferences[emailAlerts]"]').prop('checked', user.notificationPreferences.emailAlerts);
+                        $('input[name="notificationPreferences[criticalAlerts]"]').prop('checked', user.notificationPreferences.criticalAlerts);
+                        $('input[name="notificationPreferences[dailySummary]"]').prop('checked', user.notificationPreferences.dailySummary);
+                        $('input[name="notificationPreferences[weeklyReport]"]').prop('checked', user.notificationPreferences.weeklyReport);
+                    }
+                    
+                    // Show modal
+                    $('#editUserModal').removeClass('hidden');
+                }
+            },
+            error: function() {
+                toastr.error('Failed to load user data');
+            }
+        });
+    };
+    
+    // Update user
+    function updateUser(formData) {
+        const data = {};
+        formData.forEach(item => {
+            if (item.name.startsWith('notificationPreferences[')) {
+                if (!data.notificationPreferences) {
+                    data.notificationPreferences = {};
+                }
+                const key = item.name.match(/\[(.*?)\]/)[1];
+                data.notificationPreferences[key] = item.value === 'on';
+            } else if (item.name === 'isActive') {
+                data[item.name] = item.value === 'on';
+            } else if (item.value) {
+                data[item.name] = item.value;
+            }
+        });
+        
+        const userId = data.id;
+        delete data.id;
+        
+        $.ajax({
+            url: `/users/api/users/${userId}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('User updated successfully');
+                    $('#editUserModal').addClass('hidden');
+                    $('#editUserForm')[0].reset();
+                    
+                    // Reload page to update user list
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to update user';
+                toastr.error(error);
+            }
+        });
+    };
+    
+    // Toggle user status
+    window.toggleUserStatus = function(userId, activate) {
+        const action = activate ? 'activate' : 'deactivate';
+        const userName = $(`#user-${userId}`).find('.text-sm.font-medium').text().trim();
+        
+        if (confirm(`Are you sure you want to ${action} user "${userName}"?`)) {
+            $.ajax({
+                url: `/users/api/users/${userId}/toggle-status`,
+                method: 'PUT',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(`User ${action}d successfully`);
+                        
+                        // Update row appearance
+                        const statusCell = $(`#user-${userId}`).find('td').eq(2);
+                        const newStatus = activate ? 'Active' : 'Inactive';
+                        const newColor = activate ? 'green' : 'red';
+                        
+                        statusCell.find('span:last').text(newStatus)
+                            .removeClass('bg-green-100 text-green-800 bg-red-100 text-red-800')
+                            .addClass(`bg-${newColor}-100 text-${newColor}-800`);
+                        
+                        // Update action buttons
+                        const actionCell = $(`#user-${userId}`).find('td').eq(5);
+                        if (activate) {
+                            actionCell.find('a:nth-child(2)').html('<i class="fas fa-user-slash"></i>')
+                                .attr('onclick', `toggleUserStatus('${userId}', false)`)
+                                .removeClass('text-green-600 hover:text-green-900')
+                                .addClass('text-yellow-600 hover:text-yellow-900');
+                        } else {
+                            actionCell.find('a:nth-child(2)').html('<i class="fas fa-user-check"></i>')
+                                .attr('onclick', `toggleUserStatus('${userId}', true)`)
+                                .removeClass('text-yellow-600 hover:text-yellow-900')
+                                .addClass('text-green-600 hover:text-green-900');
+                        }
+                    }
+                },
+                error: function() {
+                    toastr.error(`Failed to ${action} user`);
+                }
+            });
+        }
+    };
+    
+    // Reset user password
+    window.resetUserPassword = function(userId) {
+        $('#resetUserId').val(userId);
+        $('#resetPasswordModal').removeClass('hidden');
+    };
+    
+    // Reset password
+    function resetUserPassword(userId, newPassword, confirmPassword) {
+        $.ajax({
+            url: `/users/api/users/${userId}/reset-password`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 
+                newPassword: newPassword, 
+                confirmPassword: confirmPassword 
+            }),
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Password reset successfully');
+                    $('#resetPasswordModal').addClass('hidden');
+                    $('#resetPasswordForm')[0].reset();
+                }
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to reset password';
+                toastr.error(error);
+            }
+        });
+    };
+    
+    // Delete user
+    window.deleteUser = function(userId) {
+        const userName = $(`#user-${userId}`).find('.text-sm.font-medium').text().trim();
+        
+        if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+            $.ajax({
+                url: `/users/api/users/${userId}`,
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('User deleted successfully');
+                        $(`#user-${userId}`).remove();
+                    }
+                },
+                error: function() {
+                    toastr.error('Failed to delete user');
+                }
+            });
+        }
+    };
+</script>
+
+<%- include('../partials/footer'); %>
+<%- include('../partials/scripts'); %>

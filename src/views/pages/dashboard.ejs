@@ -1,0 +1,616 @@
+<%- include('../partials/head', { title: 'Dashboard' }); %>
+<%- include('../partials/header'); %>
+<%- include('../partials/sidebar'); %>
+
+<!-- Main Content -->
+<main class="md:ml-64 pt-16 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+                    <p class="text-gray-600">Real-time monitoring of solar system performance</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <button id="refreshData" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                    </button>
+                    <a href="/dashboard/live-data" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
+                        <i class="fas fa-bolt mr-2"></i> Live View
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                            <i class="fas fa-bolt text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Current Power</p>
+                            <p class="text-2xl font-bold text-gray-800" id="currentPower">0 W</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg mr-4">
+                            <i class="fas fa-sun text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Today's Energy</p>
+                            <p class="text-2xl font-bold text-gray-800" id="todayEnergy">0 kWh</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                            <i class="fas fa-thermometer-half text-yellow-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Temperature</p>
+                            <p class="text-2xl font-bold text-gray-800" id="currentTemp">0 °C</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg mr-4">
+                            <i class="fas fa-bell text-red-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Active Alerts</p>
+                            <p class="text-2xl font-bold text-gray-800" id="activeAlerts">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Real-time Chart -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Real-time Performance</h2>
+                        <p class="text-sm text-gray-600">Last 24 hours of solar production</p>
+                    </div>
+                    <div class="p-4">
+                        <div class="h-80">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="px-6 py-3 border-t bg-gray-50 flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            Last updated: <span id="lastUpdate">--:--:--</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200" data-period="1h">1H</button>
+                            <button class="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200" data-period="6h">6H</button>
+                            <button class="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200" data-period="24h">24H</button>
+                            <button class="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200" data-period="7d">7D</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Status -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">System Status</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4" id="systemStatusList">
+                            <!-- System status items will be loaded here -->
+                            <div class="animate-pulse">
+                                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Recent Alerts -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800">Recent Alerts</h2>
+                        <a href="/alerts" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-3" id="recentAlerts">
+                            <% if (recentAlerts && recentAlerts.length > 0) { %>
+                                <% recentAlerts.forEach(function(alert) { %>
+                                    <div class="border-l-4 <%= alert.severity === 'critical' ? 'border-red-500 bg-red-50' : 
+                                                              alert.severity === 'high' ? 'border-orange-500 bg-orange-50' : 
+                                                              alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' : 
+                                                              'border-blue-500 bg-blue-50' %> p-3 rounded-r">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="font-medium text-gray-800"><%= alert.title %></p>
+                                                <p class="text-sm text-gray-600 mt-1"><%= alert.message %></p>
+                                            </div>
+                                            <span class="text-xs px-2 py-1 rounded-full <%= alert.severity === 'critical' ? 'bg-red-100 text-red-800' : 
+                                                                                         alert.severity === 'high' ? 'bg-orange-100 text-orange-800' : 
+                                                                                         alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                                                                         'bg-blue-100 text-blue-800' %>">
+                                                <%= alert.severity %>
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <span class="text-xs text-gray-500">
+                                                <i class="far fa-clock mr-1"></i>
+                                                <%= helpers.timeAgo(alert.createdAt) %>
+                                            </span>
+                                            <% if (!alert.acknowledged) { %>
+                                                <button class="text-xs text-blue-600 hover:text-blue-800" onclick="acknowledgeAlert('<%= alert._id %>')">
+                                                    Acknowledge
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="text-center py-8 text-gray-500">
+                                    <i class="fas fa-check-circle text-3xl mb-3 text-green-500"></i>
+                                    <p>No active alerts</p>
+                                    <p class="text-sm mt-1">System operating normally</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Device Status -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Device Status</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-3" id="deviceStatus">
+                            <!-- Device status will be loaded here -->
+                            <div class="animate-pulse">
+                                <div class="h-4 bg-gray-200 rounded w-full mb-3"></div>
+                                <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Quick Actions</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="/reports/api/reports/generate?type=daily" 
+                               class="flex flex-col items-center justify-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition duration-200"
+                               onclick="return confirm('Generate daily report?')">
+                                <i class="fas fa-file-pdf text-blue-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium text-gray-800">Daily Report</span>
+                            </a>
+                            
+                            <a href="/alerts" 
+                               class="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition duration-200">
+                                <i class="fas fa-bell text-green-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium text-gray-800">View Alerts</span>
+                            </a>
+                            
+                            <% if (isAdmin || isTechnician) { %>
+                            <a href="#" id="testAlertBtn"
+                               class="flex flex-col items-center justify-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition duration-200">
+                                <i class="fas fa-envelope text-yellow-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium text-gray-800">Test Alert</span>
+                            </a>
+                            <% } %>
+                            
+                            <a href="/dashboard/live-data" 
+                               class="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition duration-200">
+                                <i class="fas fa-chart-line text-purple-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium text-gray-800">Live Data</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Summary -->
+        <div class="mt-6 bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">Performance Summary</h2>
+                <p class="text-sm text-gray-600">Today vs Yesterday vs This time last week</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-gray-800" id="todayEfficiency">0%</div>
+                        <p class="text-sm text-gray-600 mt-1">Today's Efficiency</p>
+                        <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div id="efficiencyBar" class="h-full bg-green-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-gray-800" id="peakPower">0 W</div>
+                        <p class="text-sm text-gray-600 mt-1">Peak Power Today</p>
+                        <div class="mt-2">
+                            <span class="text-xs text-gray-500" id="peakTime">--:--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-gray-800" id="avgVoltage">0 V</div>
+                        <p class="text-sm text-gray-600 mt-1">Average Voltage</p>
+                        <div class="mt-2">
+                            <span class="text-xs <%= dailySummary && dailySummary.minVoltage < 11.5 ? 'text-red-600' : 'text-green-600' %>">
+                                Min: <span id="minVoltage">0</span>V
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Global variables
+    let performanceChart = null;
+    let autoRefreshInterval = null;
+    
+    // Initialize dashboard
+    $(document).ready(function() {
+        loadDashboardData();
+        setupAutoRefresh();
+        setupEventListeners();
+    });
+    
+    // Load dashboard data
+    function loadDashboardData() {
+        showLoading();
+        
+        // Load real-time data
+        $.ajax({
+            url: '/dashboard/api/realtime',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.data) {
+                    updateRealtimeDisplay(response.data);
+                }
+            },
+            error: function() {
+                toastr.error('Failed to load real-time data');
+            }
+        });
+        
+        // Load historical data for chart
+        loadHistoricalData('24h');
+        
+        // Load system stats
+        loadSystemStats();
+        
+        // Load device status
+        loadDeviceStatus();
+        
+        hideLoading();
+    }
+    
+    // Update real-time display
+    function updateRealtimeDisplay(data) {
+        $('#currentPower').text(data.power.value + ' ' + data.power.unit);
+        $('#currentTemp').text(data.temperature.value + ' ' + data.temperature.unit);
+        $('#lastUpdate').text(new Date().toLocaleTimeString());
+        
+        // Update system status indicator
+        const statusElement = $('#systemStatus');
+        statusElement.removeClass('bg-green-100 bg-yellow-100 bg-red-100 text-green-800 text-yellow-800 text-red-800');
+        
+        if (data.healthScore >= 80) {
+            statusElement.addClass('bg-green-100 text-green-800').text('Healthy');
+        } else if (data.healthScore >= 60) {
+            statusElement.addClass('bg-yellow-100 text-yellow-800').text('Warning');
+        } else {
+            statusElement.addClass('bg-red-100 text-red-800').text('Critical');
+        }
+    }
+    
+    // Load historical data for chart
+    function loadHistoricalData(period) {
+        $.ajax({
+            url: '/dashboard/api/historical',
+            method: 'GET',
+            data: { period: period },
+            success: function(response) {
+                if (response.success) {
+                    updatePerformanceChart(response.data);
+                }
+            },
+            error: function() {
+                toastr.error('Failed to load historical data');
+            }
+        });
+    }
+    
+    // Update performance chart
+    function updatePerformanceChart(data) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        // Prepare chart data
+        const labels = data.map(item => {
+            const date = new Date(item.timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        });
+        
+        const voltages = data.map(item => item.voltage);
+        const powers = data.map(item => item.power);
+        
+        if (performanceChart) {
+            performanceChart.destroy();
+        }
+        
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Power (W)',
+                        data: powers,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Voltage (V)',
+                        data: voltages,
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Power (W)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Voltage (V)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Load system statistics
+    function loadSystemStats() {
+        $.ajax({
+            url: '/dashboard/api/stats',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.stats) {
+                    updateSystemStats(response.stats);
+                }
+            }
+        });
+    }
+    
+    // Update system statistics display
+    function updateSystemStats(stats) {
+        $('#todayEnergy').text(stats.totalEnergy + ' kWh');
+        $('#todayEfficiency').text(stats.efficiency + '%');
+        $('#efficiencyBar').css('width', stats.efficiency + '%');
+        $('#peakPower').text(stats.peakPower + ' W');
+        $('#avgVoltage').text(stats.avgVoltage + ' V');
+        $('#minVoltage').text(stats.minVoltage);
+        
+        // Update peak time if available
+        if (stats.peakTime) {
+            $('#peakTime').text(stats.peakTime);
+        }
+    }
+    
+    // Load device status
+    function loadDeviceStatus() {
+        $.ajax({
+            url: '/dashboard/api/devices',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    updateDeviceStatus(response.data);
+                }
+            }
+        });
+    }
+    
+    // Update device status display
+    function updateDeviceStatus(devices) {
+        const deviceStatusHtml = devices.map(device => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full ${device.isOnline ? 'bg-green-500' : 'bg-red-500'} mr-3"></div>
+                    <div>
+                        <p class="font-medium text-gray-800">${device.deviceId}</p>
+                        <p class="text-sm text-gray-600">${device.location}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-medium ${device.status === 'normal' ? 'text-green-600' : 
+                                                     device.status === 'warning' ? 'text-yellow-600' : 
+                                                     'text-red-600'}">
+                        ${device.status}
+                    </p>
+                    <p class="text-xs text-gray-500">Last: ${new Date(device.lastSeen).toLocaleTimeString()}</p>
+                </div>
+            </div>
+        `).join('');
+        
+        $('#deviceStatus').html(deviceStatusHtml);
+    }
+    
+    // Set up auto-refresh
+    function setupAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+        
+        autoRefreshInterval = setInterval(() => {
+            loadDashboardData();
+        }, 30000); // Refresh every 30 seconds
+    }
+    
+    // Set up event listeners
+    function setupEventListeners() {
+        // Refresh button
+        $('#refreshData').click(function() {
+            loadDashboardData();
+            toastr.success('Data refreshed');
+        });
+        
+        // Period buttons
+        $('[data-period]').click(function() {
+            const period = $(this).data('period');
+            loadHistoricalData(period);
+            
+            // Update button states
+            $('[data-period]').removeClass('bg-blue-100 text-blue-700').addClass('bg-gray-100 text-gray-700');
+            $(this).removeClass('bg-gray-100 text-gray-700').addClass('bg-blue-100 text-blue-700');
+        });
+        
+        // Test alert button
+        $('#testAlertBtn').click(function() {
+            if (confirm('Send test alert email?')) {
+                $.ajax({
+                    url: '/alerts/api/alerts/test-email',
+                    method: 'POST',
+                    data: { email: '<%= user.email %>' },
+                    success: function() {
+                        toastr.success('Test alert sent to your email');
+                    },
+                    error: function() {
+                        toastr.error('Failed to send test alert');
+                    }
+                });
+            }
+        });
+        
+        // Acknowledge alert
+        window.acknowledgeAlert = function(alertId) {
+            if (confirm('Mark this alert as acknowledged?')) {
+                $.ajax({
+                    url: `/alerts/api/alerts/${alertId}/acknowledge`,
+                    method: 'PUT',
+                    success: function() {
+                        toastr.success('Alert acknowledged');
+                        // Reload recent alerts
+                        loadRecentAlerts();
+                    },
+                    error: function() {
+                        toastr.error('Failed to acknowledge alert');
+                    }
+                });
+            }
+        };
+    }
+    
+    // Load recent alerts
+    function loadRecentAlerts() {
+        $.ajax({
+            url: '/alerts/api/alerts?status=active&limit=5',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    updateRecentAlerts(response.data);
+                }
+            }
+        });
+    }
+    
+    // Update recent alerts display
+    function updateRecentAlerts(alerts) {
+        // Update active alerts count
+        $('#activeAlerts').text(alerts.length);
+        
+        // Update notification bell badge
+        const notificationBell = $('#notificationBell span');
+        if (alerts.length > 0) {
+            notificationBell.text(alerts.length > 9 ? '9+' : alerts.length).show();
+        } else {
+            notificationBell.hide();
+        }
+    }
+    
+    // Show loading overlay
+    function showLoading() {
+        $('#loadingOverlay').removeClass('hidden');
+    }
+    
+    // Hide loading overlay
+    function hideLoading() {
+        $('#loadingOverlay').addClass('hidden');
+    }
+    
+    // Initialize on page load
+    $(document).ready(function() {
+        loadDashboardData();
+        setupAutoRefresh();
+        setupEventListeners();
+        
+        // Load recent alerts every minute
+        setInterval(loadRecentAlerts, 60000);
+    });
+</script>
+
+<%- include('../partials/footer'); %>
+<%- include('../partials/scripts'); %>

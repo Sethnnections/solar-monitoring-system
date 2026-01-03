@@ -1,0 +1,799 @@
+<%- include('../partials/head', { title: 'Live Data' }); %>
+<%- include('../partials/header'); %>
+<%- include('../partials/sidebar'); %>
+
+<!-- Main Content -->
+<main class="md:ml-64 pt-16 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Live Data Monitoring</h1>
+                    <p class="text-gray-600">Real-time sensor data from ESP32 devices</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <button id="autoRefreshToggle" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
+                        <i class="fas fa-play mr-2"></i> Auto Refresh: ON
+                    </button>
+                    <button id="exportData" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-download mr-2"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Real-time Data Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Voltage Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <i class="fas fa-bolt text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-medium text-gray-500">Voltage</span>
+                        <div class="text-3xl font-bold text-gray-800" id="liveVoltage">0.00</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Status:</span>
+                        <span id="voltageStatus" class="font-medium">Normal</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                        <div id="voltageBar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2 flex justify-between">
+                        <span>0V</span>
+                        <span>15V</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <i class="fas fa-tachometer-alt text-green-600 text-2xl"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-medium text-gray-500">Current</span>
+                        <div class="text-3xl font-bold text-gray-800" id="liveCurrent">0.000</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Status:</span>
+                        <span id="currentStatus" class="font-medium">Normal</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                        <div id="currentBar" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2 flex justify-between">
+                        <span>0A</span>
+                        <span>10A</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Power Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-3 bg-yellow-100 rounded-lg">
+                        <i class="fas fa-sun text-yellow-600 text-2xl"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-medium text-gray-500">Power</span>
+                        <div class="text-3xl font-bold text-gray-800" id="livePower">0.0</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Status:</span>
+                        <span id="powerStatus" class="font-medium">Normal</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                        <div id="powerBar" class="h-full bg-yellow-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2 flex justify-between">
+                        <span>0W</span>
+                        <span>150W</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Temperature Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-3 bg-red-100 rounded-lg">
+                        <i class="fas fa-thermometer-half text-red-600 text-2xl"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-medium text-gray-500">Temperature</span>
+                        <div class="text-3xl font-bold text-gray-800" id="liveTemperature">0.0</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Status:</span>
+                        <span id="temperatureStatus" class="font-medium">Normal</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                        <div id="temperatureBar" class="h-full bg-red-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2 flex justify-between">
+                        <span>0°C</span>
+                        <span>100°C</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Voltage & Current Chart -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800">Voltage & Current</h2>
+                    <p class="text-sm text-gray-600">Real-time monitoring</p>
+                </div>
+                <div class="p-4">
+                    <div class="h-80">
+                        <canvas id="voltageCurrentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Power Chart -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800">Power Generation</h2>
+                    <p class="text-sm text-gray-600">Last hour of power output</p>
+                </div>
+                <div class="p-4">
+                    <div class="h-80">
+                        <canvas id="powerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Device Status and Data Table -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Device Status -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Device Status</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-4" id="liveDeviceStatus">
+                            <!-- Device status will be loaded here -->
+                            <div class="animate-pulse">
+                                <div class="h-20 bg-gray-200 rounded-lg"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Data Table -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800">Recent Sensor Readings</h2>
+                        <span class="text-sm text-gray-600" id="dataCount">0 readings</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Time
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Voltage (V)
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Current (A)
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Power (W)
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Temp (°C)
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="recentReadings">
+                                <!-- Data will be loaded here -->
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin text-2xl mb-3"></i>
+                                        <p>Loading live data...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-3 border-t bg-gray-50 text-center">
+                        <button id="loadMoreData" class="text-sm text-blue-600 hover:text-blue-800">
+                            Load More Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Health -->
+        <div class="mt-6 bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">System Health</h2>
+                <p class="text-sm text-gray-600">Overall system performance metrics</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full border-8 
+                            <%= latestData && latestData.healthScore >= 80 ? 'border-green-200' :
+                               latestData && latestData.healthScore >= 60 ? 'border-yellow-200' :
+                               'border-red-200' %>">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold 
+                                    <%= latestData && latestData.healthScore >= 80 ? 'text-green-600' :
+                                       latestData && latestData.healthScore >= 60 ? 'text-yellow-600' :
+                                       'text-red-600' %>"
+                                    id="healthScore">
+                                    <%= latestData ? latestData.healthScore : '0' %>
+                                </div>
+                                <div class="text-sm text-gray-600">Score</div>
+                            </div>
+                        </div>
+                        <p class="mt-3 font-medium 
+                            <%= latestData && latestData.healthScore >= 80 ? 'text-green-600' :
+                               latestData && latestData.healthScore >= 60 ? 'text-yellow-600' :
+                               'text-red-600' %>"
+                            id="healthStatus">
+                            <%= latestData && latestData.healthScore >= 80 ? 'Healthy' :
+                               latestData && latestData.healthScore >= 60 ? 'Warning' :
+                               'Critical' %>
+                        </p>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Battery Health</span>
+                                    <span id="batteryHealth">0%</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="batteryHealthBar" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Panel Efficiency</span>
+                                    <span id="panelEfficiency">0%</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="panelEfficiencyBar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>System Uptime</span>
+                                    <span id="systemUptime">0%</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="systemUptimeBar" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-800 mb-2">Recommendations</h4>
+                            <ul class="text-sm text-gray-600 space-y-1" id="recommendations">
+                                <li>• System is starting up...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Global variables
+    let voltageCurrentChart = null;
+    let powerChart = null;
+    let autoRefresh = true;
+    let refreshInterval = null;
+    let dataHistory = [];
+    
+    // Initialize live data page
+    $(document).ready(function() {
+        loadLiveData();
+        setupCharts();
+        setupEventListeners();
+        startAutoRefresh();
+    });
+    
+    // Load live data
+    function loadLiveData() {
+        // Load real-time data
+        $.ajax({
+            url: '/dashboard/api/realtime',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.data) {
+                    updateLiveDataDisplay(response.data);
+                    addToDataHistory(response.data);
+                    updateHealthMetrics(response.data);
+                }
+            },
+            error: function() {
+                toastr.error('Failed to load live data');
+            }
+        });
+        
+        // Load device status
+        loadDeviceStatus();
+        
+        // Load historical data for charts
+        loadChartData();
+    }
+    
+    // Update live data display
+    function updateLiveDataDisplay(data) {
+        // Update main cards
+        $('#liveVoltage').text(data.voltage.value.toFixed(2));
+        $('#liveCurrent').text(data.current.value.toFixed(3));
+        $('#livePower').text(data.power.value.toFixed(1));
+        $('#liveTemperature').text(data.temperature.value.toFixed(1));
+        
+        // Update status indicators
+        updateStatusIndicator('voltage', data.voltage.status, data.voltage.value, 15);
+        updateStatusIndicator('current', data.current.status, data.current.value, 10);
+        updateStatusIndicator('temperature', data.temperature.status, data.temperature.value, 100);
+        
+        // Update power bar (0-150W scale)
+        const powerPercent = Math.min((data.power.value / 150) * 100, 100);
+        $('#powerBar').css('width', powerPercent + '%');
+        $('#powerStatus').text(data.power.value > 0 ? 'Producing' : 'Idle');
+        $('#powerStatus').toggleClass('text-green-600', data.power.value > 0);
+        $('#powerStatus').toggleClass('text-gray-600', data.power.value === 0);
+    }
+    
+    // Update status indicator
+    function updateStatusIndicator(type, status, value, max) {
+        const element = $(`#${type}Status`);
+        const bar = $(`#${type}Bar`);
+        
+        // Update text
+        element.text(status.charAt(0).toUpperCase() + status.slice(1));
+        
+        // Update color based on status
+        element.removeClass('text-green-600 text-yellow-600 text-red-600');
+        if (status === 'normal') {
+            element.addClass('text-green-600');
+        } else if (status === 'warning') {
+            element.addClass('text-yellow-600');
+        } else {
+            element.addClass('text-red-600');
+        }
+        
+        // Update progress bar
+        const percent = Math.min((value / max) * 100, 100);
+        bar.css('width', percent + '%');
+    }
+    
+    // Set up charts
+    function setupCharts() {
+        const vcCtx = document.getElementById('voltageCurrentChart').getContext('2d');
+        const powerCtx = document.getElementById('powerChart').getContext('2d');
+        
+        // Voltage & Current Chart
+        voltageCurrentChart = new Chart(vcCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Voltage (V)',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Current (A)',
+                        data: [],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 8
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Voltage (V)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Current (A)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Power Chart
+        powerChart = new Chart(powerCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Power (W)',
+                        data: [],
+                        borderColor: 'rgb(245, 158, 11)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Power (W)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Load chart data
+    function loadChartData() {
+        $.ajax({
+            url: '/dashboard/api/historical',
+            method: 'GET',
+            data: { period: '1h', interval: 'minute' },
+            success: function(response) {
+                if (response.success && response.data) {
+                    updateCharts(response.data);
+                }
+            }
+        });
+    }
+    
+    // Update charts with new data
+    function updateCharts(data) {
+        const labels = data.map(item => {
+            const date = new Date(item.timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        });
+        
+        const voltages = data.map(item => item.voltage);
+        const currents = data.map(item => item.current);
+        const powers = data.map(item => item.power);
+        
+        // Update voltage/current chart
+        voltageCurrentChart.data.labels = labels;
+        voltageCurrentChart.data.datasets[0].data = voltages;
+        voltageCurrentChart.data.datasets[1].data = currents;
+        voltageCurrentChart.update();
+        
+        // Update power chart
+        powerChart.data.labels = labels;
+        powerChart.data.datasets[0].data = powers;
+        powerChart.update();
+    }
+    
+    // Load device status
+    function loadDeviceStatus() {
+        $.ajax({
+            url: '/dashboard/api/devices',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    updateDeviceStatus(response.data);
+                }
+            }
+        });
+    }
+    
+    // Update device status display
+    function updateDeviceStatus(devices) {
+        const html = devices.map(device => `
+            <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div class="flex items-center">
+                    <div class="relative">
+                        <div class="w-10 h-10 rounded-full ${device.isOnline ? 'bg-green-100' : 'bg-red-100'} flex items-center justify-center">
+                            <i class="fas fa-microchip ${device.isOnline ? 'text-green-600' : 'text-red-600'}"></i>
+                        </div>
+                        <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full ${device.isOnline ? 'bg-green-500' : 'bg-red-500'} border-2 border-white"></div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="font-medium text-gray-800">${device.deviceId}</p>
+                        <p class="text-sm text-gray-600">${device.location}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-medium ${device.status === 'normal' ? 'text-green-600' : 
+                                                     device.status === 'warning' ? 'text-yellow-600' : 
+                                                     'text-red-600'}">
+                        ${device.status}
+                    </p>
+                    <p class="text-xs text-gray-500">${device.isOnline ? 'Online' : 'Offline'}</p>
+                </div>
+            </div>
+        `).join('');
+        
+        $('#liveDeviceStatus').html(html);
+    }
+    
+    // Add data to history
+    function addToDataHistory(data) {
+        const timestamp = new Date().toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        dataHistory.unshift({
+            time: timestamp,
+            voltage: data.voltage.value.toFixed(2),
+            current: data.current.value.toFixed(3),
+            power: data.power.value.toFixed(1),
+            temperature: data.temperature.value.toFixed(1),
+            status: data.voltage.status
+        });
+        
+        // Keep only last 10 readings
+        if (dataHistory.length > 10) {
+            dataHistory.pop();
+        }
+        
+        updateRecentReadingsTable();
+    }
+    
+    // Update recent readings table
+    function updateRecentReadingsTable() {
+        const html = dataHistory.map(reading => `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${reading.time}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${reading.voltage} V
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${reading.current} A
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${reading.power} W
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${reading.temperature} °C
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${reading.status === 'normal' ? 'bg-green-100 text-green-800' : 
+                         reading.status === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+                         'bg-red-100 text-red-800'}">
+                        ${reading.status}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+        
+        $('#recentReadings').html(html || `
+            <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-database text-2xl mb-3"></i>
+                    <p>No data available yet</p>
+                </td>
+            </tr>
+        `);
+        
+        $('#dataCount').text(`${dataHistory.length} readings`);
+    }
+    
+    // Update health metrics
+    function updateHealthMetrics(data) {
+        // Update health score
+        $('#healthScore').text(data.healthScore);
+        $('#healthStatus').text(data.healthScore >= 80 ? 'Healthy' : data.healthScore >= 60 ? 'Warning' : 'Critical');
+        
+        // Update colors based on score
+        const scoreElement = $('#healthScore');
+        const statusElement = $('#healthStatus');
+        
+        scoreElement.removeClass('text-green-600 text-yellow-600 text-red-600');
+        statusElement.removeClass('text-green-600 text-yellow-600 text-red-600');
+        
+        if (data.healthScore >= 80) {
+            scoreElement.addClass('text-green-600');
+            statusElement.addClass('text-green-600');
+        } else if (data.healthScore >= 60) {
+            scoreElement.addClass('text-yellow-600');
+            statusElement.addClass('text-yellow-600');
+        } else {
+            scoreElement.addClass('text-red-600');
+            statusElement.addClass('text-red-600');
+        }
+        
+        // Simulate other metrics (in a real app, these would come from the server)
+        const batteryHealth = Math.min(100, Math.max(0, (data.voltage.value - 11) * 25)); // Simple calculation
+        const panelEfficiency = Math.min(100, (data.power.value / 100) * 100); // Assuming 100W is max
+        const systemUptime = 99.5; // Hardcoded for demo
+        
+        $('#batteryHealth').text(batteryHealth.toFixed(0) + '%');
+        $('#batteryHealthBar').css('width', batteryHealth + '%');
+        
+        $('#panelEfficiency').text(panelEfficiency.toFixed(0) + '%');
+        $('#panelEfficiencyBar').css('width', panelEfficiency + '%');
+        
+        $('#systemUptime').text(systemUptime + '%');
+        $('#systemUptimeBar').css('width', systemUptime + '%');
+        
+        // Update recommendations
+        const recommendations = [];
+        
+        if (data.voltage.value < 11.5) {
+            recommendations.push('• Low voltage detected. Check battery connections.');
+        }
+        
+        if (data.temperature.value > 60) {
+            recommendations.push('• High temperature. Ensure proper ventilation.');
+        }
+        
+        if (data.current.value < 0.5 && data.voltage.value > 12) {
+            recommendations.push('• Low current output. Check solar panel connections.');
+        }
+        
+        if (data.healthScore >= 80) {
+            recommendations.push('• System operating optimally.');
+        }
+        
+        $('#recommendations').html(recommendations.map(rec => `<li>${rec}</li>`).join(''));
+    }
+    
+    // Set up event listeners
+    function setupEventListeners() {
+        // Auto refresh toggle
+        $('#autoRefreshToggle').click(function() {
+            autoRefresh = !autoRefresh;
+            const button = $(this);
+            
+            if (autoRefresh) {
+                button.html('<i class="fas fa-play mr-2"></i> Auto Refresh: ON');
+                button.removeClass('bg-gray-600').addClass('bg-green-600');
+                startAutoRefresh();
+                toastr.success('Auto refresh enabled');
+            } else {
+                button.html('<i class="fas fa-pause mr-2"></i> Auto Refresh: OFF');
+                button.removeClass('bg-green-600').addClass('bg-gray-600');
+                stopAutoRefresh();
+                toastr.info('Auto refresh disabled');
+            }
+        });
+        
+        // Export data button
+        $('#exportData').click(function() {
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `sensor_data_${timestamp}.csv`;
+            
+            // Create CSV content
+            let csv = 'Timestamp,Voltage (V),Current (A),Power (W),Temperature (°C),Status\n';
+            dataHistory.forEach(reading => {
+                csv += `${reading.time},${reading.voltage},${reading.current},${reading.power},${reading.temperature},${reading.status}\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            toastr.success(`Data exported as ${filename}`);
+        });
+        
+        // Load more data button
+        $('#loadMoreData').click(function() {
+            // In a real implementation, this would load more historical data
+            toastr.info('Loading more data...');
+        });
+    }
+    
+    // Start auto-refresh
+    function startAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+        refreshInterval = setInterval(loadLiveData, 5000); // Refresh every 5 seconds
+    }
+    
+    // Stop auto-refresh
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+    }
+    
+    // Clean up on page unload
+    $(window).on('beforeunload', function() {
+        stopAutoRefresh();
+    });
+</script>
+
+<%- include('../partials/footer'); %>
+<%- include('../partials/scripts'); %>

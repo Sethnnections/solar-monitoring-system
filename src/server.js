@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 3000;
 // Connect to MongoDB
 const connectDB = async () => {
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://sethpatiencemanguluti_db_user:7JEkpJ7NNmxDgbEc@cluster0.vlqmrdm.mongodb.net/solar_monitoring', {
+        const conn = await mongoose.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });

@@ -9,6 +9,13 @@ const alertRoutes = require('./alertRoutes');
 const reportRoutes = require('./reportRoutes');
 const userRoutes = require('./userRoutes');
 
+router.get('/', (req, res) => {
+    if (req.session.user) {
+        return res.redirect('/dashboard');
+    }
+    res.redirect('/login');
+});
+
 // Mount routes
 router.use('/', authRoutes);
 router.use('/dashboard', dashboardRoutes);

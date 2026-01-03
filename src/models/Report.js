@@ -322,7 +322,6 @@ ReportSchema.index({ generatedBy: 1, createdAt: -1 });
 ReportSchema.index({ format: 1 });
 ReportSchema.index({ tags: 1 });
 ReportSchema.index({ downloadCount: -1 });
-ReportSchema.index({ expiresAt: 1 });
 ReportSchema.index({ isPublic: 1 });
 ReportSchema.index({ createdAt: -1 });
 

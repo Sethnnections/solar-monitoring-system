@@ -12,6 +12,9 @@ const { addUserToLocals, checkSessionTimeout, corsOptions } = require('./middlew
 const { requestLogger, securityHeaders, maintenanceMode } = require('./middlewares/errorMiddleware');
 const { errorHandler, notFoundHandler } = require('./middlewares/errorMiddleware');
 
+// Import database connection
+const connectDB = require('./config/database');
+
 // Import routes
 const routes = require('./routes');
 
@@ -19,37 +22,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-const connectDB = async () => {
-    try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        
-        console.log(` MongoDB Connected: ${conn.connection.host}`);
-        
-        // Connection event handlers
-        mongoose.connection.on('error', (err) => {
-            console.error(` MongoDB connection error: ${err}`);
-        });
-        
-        mongoose.connection.on('disconnected', () => {
-            console.log(' MongoDB disconnected');
-        });
-        
-        // Graceful shutdown
-        process.on('SIGINT', async () => {
-            await mongoose.connection.close();
-            console.log(' MongoDB connection closed due to app termination');
-            process.exit(0);
-        });
-        
-    } catch (error) {
-        console.error(` MongoDB connection failed: ${error.message}`);
-        process.exit(1);
-    }
-};
-
 connectDB();
 
 // Middleware
@@ -114,29 +86,29 @@ app.use(errorHandler);
 // Start server
 const server = app.listen(PORT, () => {
     console.log(` Server running on port ${PORT}`);
-    console.log(` Environment: ${process.env.NODE_ENV}`);
-    console.log(` Access at: http://localhost:${PORT}`);
-    console.log(` API Documentation: http://localhost:${PORT}/api/docs`);
+    console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Access at: http://localhost:${PORT}`);
+    console.log(`API Documentation: http://localhost:${PORT}/api/docs`);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Promise Rejection:', err);
+    console.error(' Unhandled Promise Rejection:', err);
     // Close server & exit process
     server.close(() => process.exit(1));
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
+    console.error(' Uncaught Exception:', err);
     process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('SIGTERM received. Shutting down gracefully...');
+    console.log(' SIGTERM received. Shutting down gracefully...');
     server.close(() => {
-        console.log('Process terminated');
+        console.log('👋 Process terminated');
         process.exit(0);
     });
 });

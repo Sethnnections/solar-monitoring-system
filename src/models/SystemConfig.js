@@ -459,7 +459,6 @@ SystemConfigSchema.statics.resetToDefaults = async function() {
 };
 
 // Indexes for performance
-SystemConfigSchema.index({ key: 1 }, { unique: true });
 SystemConfigSchema.index({ category: 1 });
 SystemConfigSchema.index({ isEditable: 1 });
 SystemConfigSchema.index({ isPublic: 1 });

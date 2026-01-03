@@ -85,7 +85,6 @@ router.get('/api/users/role/:role',
 
 router.get('/api/users/search', 
     [
-        queryValidators.query,
         queryValidators.limit
     ],
     validate,
@@ -93,4 +92,3 @@ router.get('/api/users/search',
 );
 
 module.exports = router;
-

@@ -203,7 +203,28 @@ const queryValidators = {
     
     period: query('period')
         .optional()
-        .isIn(['1h', '6h', '12h', '24h', '7d', '30d']).withMessage('Invalid period')
+        .isIn(['1h', '6h', '12h', '24h', '7d', '30d']).withMessage('Invalid period'),
+
+    sort: query('sort')
+        .optional()
+        .isString().withMessage('Sort must be a string')
+        .custom((value) => {
+            // Allow common sort fields like timestamp, createdAt, -timestamp, -createdAt
+            const validSorts = ['timestamp', 'createdAt', '-timestamp', '-createdAt', 'voltage.value', '-voltage.value', 'temperature.value', '-temperature.value'];
+            return validSorts.includes(value);
+        }).withMessage('Invalid sort field'),
+
+        query: query('query')
+            .optional()
+            .isString().withMessage('Search query must be a string')
+            .trim()
+            .escape(),
+
+        sort: query('sort')
+            .optional()
+            .isString().withMessage('Sort must be a string')
+            .trim()
+            .escape(),
 };
 
 // ID parameter validation

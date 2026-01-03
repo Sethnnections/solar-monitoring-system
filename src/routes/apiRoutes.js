@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const SensorController = require('../controllers/sensorController');
+const SensorController = require('../controllers/sensorController'); 
 const { requireApiKey } = require('../middlewares/authMiddleware');
 const { sensorDataValidators, validate, queryValidators, idParamValidator } = require('../middlewares/validationMiddleware');
 
@@ -9,7 +9,7 @@ router.post('/sensor-data',
     requireApiKey,
     sensorDataValidators,
     validate,
-    SensorController.receiveSensorData
+    SensorController.receiveSensorData  // This should now work
 );
 
 // Sensor health check
@@ -19,7 +19,7 @@ router.get('/sensor-health/:deviceId?', SensorController.getSensorHealth);
 router.get('/sensor-data/:id', 
     idParamValidator,
     validate,
-    SensorController.getSensorData
+    SensorController.getSensorData  // This should now work
 );
 
 router.get('/sensor-data', 
@@ -33,17 +33,17 @@ router.get('/sensor-data',
         queryValidators.sort
     ],
     validate,
-    SensorController.getSensorDataByFilter
+    SensorController.getSensorDataByFilter  // This should now work
 );
 
 router.delete('/sensor-data/:id', 
     idParamValidator,
     validate,
-    SensorController.deleteSensorData
+    SensorController.deleteSensorData  // This should now work
 );
 
 router.delete('/sensor-data', 
-    SensorController.bulkDeleteSensorData
+    SensorController.bulkDeleteSensorData  // This should now work
 );
 
 router.get('/sensor-statistics', 
@@ -52,7 +52,7 @@ router.get('/sensor-statistics',
         queryValidators.days
     ],
     validate,
-    SensorController.getSensorStatistics
+    SensorController.getSensorStatistics  // This should now work
 );
 
 router.get('/export/sensor-data', 
@@ -63,7 +63,7 @@ router.get('/export/sensor-data',
         queryValidators.deviceId
     ],
     validate,
-    SensorController.exportSensorData
+    SensorController.exportSensorData  // This should now work
 );
 
 // System status endpoint

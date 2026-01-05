@@ -16,11 +16,15 @@ class AuthController {
                 title: 'Login - Solar Monitoring System',
                 error: null,
                 success: null,
-                email: ''
+                email: '',
+                pageScripts: '' // Added this line
             });
         } catch (error) {
             console.error('Render login error:', error);
-            res.status(500).render('errors/500');
+            res.status(500).render('errors/500', {
+                title: 'Server Error',
+                pageScripts: '' // Added this line
+            });
         }
     }
     
@@ -35,7 +39,8 @@ class AuthController {
                     title: 'Login - Solar Monitoring System',
                     error: 'Please provide email and password',
                     success: null,
-                    email
+                    email,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -47,7 +52,8 @@ class AuthController {
                     title: 'Login - Solar Monitoring System',
                     error: 'Invalid email or password',
                     success: null,
-                    email
+                    email,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -57,7 +63,8 @@ class AuthController {
                     title: 'Login - Solar Monitoring System',
                     error: 'Account is deactivated. Please contact administrator.',
                     success: null,
-                    email
+                    email,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -68,7 +75,8 @@ class AuthController {
                     title: 'Login - Solar Monitoring System',
                     error: `Account is locked. Try again in ${lockTime} minutes.`,
                     success: null,
-                    email
+                    email,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -86,7 +94,8 @@ class AuthController {
                         title: 'Login - Solar Monitoring System',
                         error: 'Account locked due to too many failed attempts.',
                         success: null,
-                        email
+                        email,
+                        pageScripts: '' // Added this line
                     });
                 }
                 
@@ -94,7 +103,8 @@ class AuthController {
                     title: 'Login - Solar Monitoring System',
                     error: `Invalid email or password. ${attemptsLeft} attempts left.`,
                     success: null,
-                    email
+                    email,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -131,7 +141,8 @@ class AuthController {
                 title: 'Login - Solar Monitoring System',
                 error: 'An error occurred during login. Please try again.',
                 success: null,
-                email: req.body.email || ''
+                email: req.body.email || '',
+                pageScripts: '' // Added this line
             });
         }
     }
@@ -149,11 +160,15 @@ class AuthController {
                 error: null,
                 success: null,
                 userData: {},
-                roles: Object.values(USER_ROLES)
+                roles: Object.values(USER_ROLES),
+                pageScripts: '' // Added this line
             });
         } catch (error) {
             console.error('Render register error:', error);
-            res.status(500).render('errors/500');
+            res.status(500).render('errors/500', {
+                title: 'Server Error',
+                pageScripts: '' // Added this line
+            });
         }
     }
     
@@ -196,7 +211,8 @@ class AuthController {
                     error: errors.join(', '),
                     success: null,
                     userData: { name, email, role, phone },
-                    roles: Object.values(USER_ROLES)
+                    roles: Object.values(USER_ROLES),
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -208,7 +224,8 @@ class AuthController {
                     error: 'User with this email already exists',
                     success: null,
                     userData: { name, email, role, phone },
-                    roles: Object.values(USER_ROLES)
+                    roles: Object.values(USER_ROLES),
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -243,7 +260,8 @@ class AuthController {
                 error: null,
                 success: `User ${name} created successfully`,
                 userData: {},
-                roles: Object.values(USER_ROLES)
+                roles: Object.values(USER_ROLES),
+                pageScripts: '' // Added this line
             });
             
         } catch (error) {
@@ -253,7 +271,8 @@ class AuthController {
                 error: 'An error occurred during registration',
                 success: null,
                 userData: req.body,
-                roles: Object.values(USER_ROLES)
+                roles: Object.values(USER_ROLES),
+                pageScripts: '' // Added this line
             });
         }
     }
@@ -288,11 +307,15 @@ class AuthController {
                 title: 'My Profile - Solar Monitoring System',
                 user: user.toObject(),
                 success: null,
-                error: null
+                error: null,
+                pageScripts: '' // Added this line
             });
         } catch (error) {
             console.error('Render profile error:', error);
-            res.status(500).render('errors/500');
+            res.status(500).render('errors/500', {
+                title: 'Server Error',
+                pageScripts: '' // Added this line
+            });
         }
     }
     
@@ -354,7 +377,8 @@ class AuthController {
                     title: 'My Profile - Solar Monitoring System',
                     user: user.toObject(),
                     success: null,
-                    error: errors.join(', ')
+                    error: errors.join(', '),
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -368,7 +392,8 @@ class AuthController {
                 title: 'My Profile - Solar Monitoring System',
                 user: user.toObject(),
                 success: 'Profile updated successfully',
-                error: null
+                error: null,
+                pageScripts: '' // Added this line
             });
             
         } catch (error) {
@@ -377,7 +402,8 @@ class AuthController {
                 title: 'My Profile - Solar Monitoring System',
                 user: req.user ? req.user.toObject() : {},
                 success: null,
-                error: 'An error occurred while updating profile'
+                error: 'An error occurred while updating profile',
+                pageScripts: '' // Added this line
             });
         }
     }
@@ -393,11 +419,15 @@ class AuthController {
                 title: 'Forgot Password - Solar Monitoring System',
                 error: null,
                 success: null,
-                email: ''
+                email: '',
+                pageScripts: '' // Added this line
             });
         } catch (error) {
             console.error('Render forgot password error:', error);
-            res.status(500).render('errors/500');
+            res.status(500).render('errors/500', {
+                title: 'Server Error',
+                pageScripts: '' // Added this line
+            });
         }
     }
     
@@ -411,7 +441,8 @@ class AuthController {
                     title: 'Forgot Password - Solar Monitoring System',
                     error: 'Please provide a valid email address',
                     success: null,
-                    email
+                    email,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -423,7 +454,8 @@ class AuthController {
                     title: 'Forgot Password - Solar Monitoring System',
                     error: null,
                     success: 'If an account exists with this email, you will receive reset instructions.',
-                    email: ''
+                    email: '',
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -459,7 +491,8 @@ class AuthController {
                 title: 'Forgot Password - Solar Monitoring System',
                 error: null,
                 success: 'If an account exists with this email, you will receive reset instructions.',
-                email: ''
+                email: '',
+                pageScripts: '' // Added this line
             });
             
         } catch (error) {
@@ -468,7 +501,8 @@ class AuthController {
                 title: 'Forgot Password - Solar Monitoring System',
                 error: 'An error occurred. Please try again.',
                 success: null,
-                email: req.body.email || ''
+                email: req.body.email || '',
+                pageScripts: '' // Added this line
             });
         }
     }
@@ -493,7 +527,8 @@ class AuthController {
                     title: 'Reset Password - Solar Monitoring System',
                     error: 'Password reset token is invalid or has expired.',
                     success: null,
-                    token: null
+                    token: null,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -501,12 +536,16 @@ class AuthController {
                 title: 'Reset Password - Solar Monitoring System',
                 error: null,
                 success: null,
-                token
+                token,
+                pageScripts: '' // Added this line
             });
             
         } catch (error) {
             console.error('Render reset password error:', error);
-            res.status(500).render('errors/500');
+            res.status(500).render('errors/500', {
+                title: 'Server Error',
+                pageScripts: '' // Added this line
+            });
         }
     }
     
@@ -531,7 +570,8 @@ class AuthController {
                     title: 'Reset Password - Solar Monitoring System',
                     error: 'Password reset token is invalid or has expired.',
                     success: null,
-                    token: null
+                    token: null,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -551,7 +591,8 @@ class AuthController {
                     title: 'Reset Password - Solar Monitoring System',
                     error: errors.join(', '),
                     success: null,
-                    token
+                    token,
+                    pageScripts: '' // Added this line
                 });
             }
             
@@ -566,7 +607,8 @@ class AuthController {
                 title: 'Reset Password - Solar Monitoring System',
                 error: null,
                 success: 'Password reset successful. You can now login with your new password.',
-                token: null
+                token: null,
+                pageScripts: '' // Added this line
             });
             
         } catch (error) {
@@ -575,7 +617,8 @@ class AuthController {
                 title: 'Reset Password - Solar Monitoring System',
                 error: 'An error occurred. Please try again.',
                 success: null,
-                token: req.params.token || null
+                token: req.params.token || null,
+                pageScripts: '' // Added this line
             });
         }
     }

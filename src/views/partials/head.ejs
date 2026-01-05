@@ -24,14 +24,14 @@
     <link rel="stylesheet" href="/css/style.css">
     
     <!-- Page-specific styles -->
-    <% if (pageStyles) { %>
+    <% if (typeof pageStyles !== 'undefined') { %>
         <style>
             <%= pageStyles %>
         </style>
     <% } %>
     
     <!-- Page-specific scripts in head -->
-    <% if (headScripts) { %>
+    <% if (typeof headScripts !== 'undefined') { %>
         <script>
             <%= headScripts %>
         </script>

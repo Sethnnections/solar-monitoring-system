@@ -47,13 +47,26 @@ const errorHandler = (err, req, res, next) => {
         // HTML response for web
         const errorPage = statusCode === 404 ? 'errors/404' : 'errors/500';
         
-        res.render(errorPage, {
+        // Ensure required variables are defined
+        const renderData = {
             title: `Error ${statusCode}`,
             statusCode,
             message: err.message || 'Something went wrong',
             stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-            user: req.session?.user || null
-        });
+            user: req.session?.user || null,
+            isAdmin: req.session?.user?.role === 'admin' || false,
+            isTechnician: req.session?.user?.role === 'technician' || false,
+            isViewer: req.session?.user?.role === 'viewer' || false,
+            pageStyles: '', // Add empty string to avoid undefined
+            headScripts: '', // Add empty string to avoid undefined
+            pageScripts: '', // Add empty string to avoid undefined
+            locals: {
+                systemStatus: 'checking',
+                unreadAlerts: 0
+            }
+        };
+        
+        res.render(errorPage, renderData);
     }
 };
 
@@ -72,11 +85,23 @@ const notFoundHandler = (req, res, next) => {
             timestamp: new Date().toISOString()
         });
     } else {
-        res.status(404).render('errors/404', {
+        const renderData = {
             title: 'Page Not Found',
             message: 'The page you are looking for does not exist.',
-            user: req.session?.user || null
-        });
+            user: req.session?.user || null,
+            isAdmin: req.session?.user?.role === 'admin' || false,
+            isTechnician: req.session?.user?.role === 'technician' || false,
+            isViewer: req.session?.user?.role === 'viewer' || false,
+            pageStyles: '',
+            headScripts: '',
+            pageScripts: '',
+            locals: {
+                systemStatus: 'checking',
+                unreadAlerts: 0
+            }
+        };
+        
+        res.status(404).render('errors/404', renderData);
     }
 };
 

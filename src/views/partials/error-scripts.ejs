@@ -1,16 +1,12 @@
-<!-- Global JavaScript -->
-<script src="/js/main.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- Toast Notification Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
 
-<!-- Page-specific scripts -->
-<% if (typeof pageScripts !== 'undefined' && pageScripts) { %>
-    <script>
-        <%= pageScripts %>
-    </script>
-<% } %>
+<!-- Global JavaScript -->
+<script src="/js/main.js"></script>
 
 <!-- Initialize Toastr -->
 <script>
@@ -33,21 +29,5 @@
     };
 </script>
 
-<!-- Show flash messages -->
-<% if (success && success.length > 0) { %>
-    <script>
-        <% success.forEach(function(msg) { %>
-            toastr.success('<%= msg %>');
-        <% }); %>
-    </script>
-<% } %>
-
-<% if (error && error.length > 0) { %>
-    <script>
-        <% error.forEach(function(msg) { %>
-            toastr.error('<%= msg %>');
-        <% }); %>
-    </script>
-<% } %>
 </body>
 </html>

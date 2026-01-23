@@ -1,4 +1,4 @@
-<footer class="bg-gray-800 text-white py-8 md:ml-64">
+<footer class="glass-footer py-8 md:ml-64">
     <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <!-- About -->
@@ -69,8 +69,17 @@
                 </div>
             </div>
         </div>
+        <!-- Footer content remains the same, just update colors -->
     </div>
 </footer>
+
+<style>
+    .glass-footer {
+        background: linear-gradient(135deg, rgba(31, 41, 55, 0.95), rgba(17, 24, 39, 0.95));
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+</style>
 
 <!-- Back to Top Button -->
 <button id="backToTop" class="fixed bottom-8 right-8 bg-yellow-500 text-black p-3 rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 opacity-0 z-40">

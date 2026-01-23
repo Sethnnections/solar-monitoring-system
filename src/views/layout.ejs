@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head', { title: title || 'Solar Monitoring System' }); %>
+</head>
+<body class="bg-gray-900 text-white">
+    <%- include('partials/header'); %>
+    <%- include('partials/sidebar'); %>
+    
+    <!-- Main Content Area -->
+    <main class="md:ml-64 pt-16 min-h-screen">
+        <%- body %>
+    </main>
+    
+    <%- include('partials/footer'); %>
+    <%- include('partials/scripts'); %>
+</body>
+</html>

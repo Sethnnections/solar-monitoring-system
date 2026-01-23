@@ -3,14 +3,6 @@
 
 <!-- Toast Notification Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
-
-<!-- Page-specific scripts -->
-<% if (typeof pageScripts !== 'undefined' && pageScripts) { %>
-    <script>
-        <%= pageScripts %>
-    </script>
-<% } %>
 
 <!-- Initialize Toastr -->
 <script>
@@ -33,21 +25,38 @@
     };
 </script>
 
-<!-- Show flash messages -->
-<% if (success && success.length > 0) { %>
-    <script>
-        <% success.forEach(function(msg) { %>
-            toastr.success('<%= msg %>');
-        <% }); %>
-    </script>
-<% } %>
-
-<% if (error && error.length > 0) { %>
-    <script>
-        <% error.forEach(function(msg) { %>
-            toastr.error('<%= msg %>');
-        <% }); %>
-    </script>
-<% } %>
-</body>
-</html>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        if (mobileMenuButton && sidebar) {
+            mobileMenuButton.addEventListener('click', function() {
+                if (sidebar.classList.contains('hidden')) {
+                    sidebar.classList.remove('hidden');
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('hidden');
+                    if (sidebarOverlay) sidebarOverlay.classList.add('hidden');
+                }
+            });
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', function() {
+                    sidebar.classList.add('hidden');
+                    sidebarOverlay.classList.add('hidden');
+                });
+            }
+        }
+        
+        // Close sidebar on window resize if needed
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                if (sidebar) sidebar.classList.remove('hidden');
+                if (sidebarOverlay) sidebarOverlay.classList.add('hidden');
+            }
+        });
+    });
+</script>

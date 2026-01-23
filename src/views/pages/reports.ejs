@@ -1,0 +1,70 @@
+<%- include('../partials/head', { title: 'Reports Center' }); %>
+<%- include('../partials/header'); %>
+<%- include('../partials/sidebar', { currentPath: '/reports' }); %>
+
+<main class="md:ml-64 pt-16 min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center py-12">
+                <div class="inline-block p-4 bg-blue-100 rounded-full mb-6">
+                    <i class="fas fa-chart-bar text-blue-600 text-4xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">Reports Center</h1>
+                <p class="text-lg text-gray-600 mb-8">Comprehensive reporting system coming soon. Generate detailed analytics and insights.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                        <div class="flex items-center mb-4">
+                            <div class="p-3 bg-green-100 rounded-lg mr-4">
+                                <i class="fas fa-calendar-day text-green-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Daily Reports</h3>
+                                <p class="text-gray-600 text-sm mt-1">24-hour performance summaries</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                        <div class="flex items-center mb-4">
+                            <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                                <i class="fas fa-calendar-week text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Weekly Reports</h3>
+                                <p class="text-gray-600 text-sm mt-1">7-day trend analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                        <div class="flex items-center mb-4">
+                            <div class="p-3 bg-orange-100 rounded-lg mr-4">
+                                <i class="fas fa-calendar-alt text-orange-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Monthly Reports</h3>
+                                <p class="text-gray-600 text-sm mt-1">30-day performance overview</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                        <div class="flex items-center mb-4">
+                            <div class="p-3 bg-red-100 rounded-lg mr-4">
+                                <i class="fas fa-file-pdf text-red-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Export Reports</h3>
+                                <p class="text-gray-600 text-sm mt-1">PDF, Excel, CSV formats</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('../partials/footer'); %>
+<%- include('../partials/scripts'); %>

@@ -83,6 +83,11 @@ app.use(notFoundHandler);
 // Error handler (should be last middleware)
 app.use(errorHandler);
 
+// Add this middleware before your routes
+app.use((req, res, next) => {
+    res.locals.currentPath = req.path;
+    next();
+});
 // Start server
 const server = app.listen(PORT, () => {
     console.log(` Server running on port ${PORT}`);

@@ -32,7 +32,7 @@ app.use(securityHeaders);
 app.use(maintenanceMode);
 app.use(requestLogger);
 
-// Session configuration
+// Session configuration - FIXED
 const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'fallback-secret-key',
     resave: false,
@@ -40,11 +40,11 @@ const sessionConfig = {
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
         collectionName: 'sessions',
-        ttl: 7 * 24 * 60 * 60, // 7 days
+        ttl: 7 * 24 * 60 * 60, // 7 days in seconds
         autoRemove: 'native',
     }),
     cookie: {
-        maxAge: parseInt(process.env.SESSION_LIFETIME) || 1000 * 60 * 60 * 24 * 7, // 1 week
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -87,8 +87,8 @@ app.use(errorHandler);
 const server = app.listen(PORT, () => {
     console.log(` Server running on port ${PORT}`);
     console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Access at: http://localhost:${PORT}`);
-    console.log(`API Documentation: http://localhost:${PORT}/api/docs`);
+    console.log(` Access at: http://localhost:${PORT}`);
+    console.log(` API Documentation: http://localhost:${PORT}/api/docs`);
 });
 
 // Handle unhandled promise rejections
@@ -108,9 +108,9 @@ process.on('uncaughtException', (err) => {
 process.on('SIGTERM', () => {
     console.log(' SIGTERM received. Shutting down gracefully...');
     server.close(() => {
-        console.log('👋 Process terminated');
+        console.log(' Process terminated');
         process.exit(0);
     });
 });
 
-module.exports = app; // For testing
+module.exports = app;

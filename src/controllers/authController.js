@@ -28,19 +28,16 @@ class AuthController {
         }
     }
     
-    // Handle login
+   // Handle login
     static async login(req, res) {
         try {
-            const { email, password } = req.body;
+            const { email, password, remember } = req.body;
             
             // Validate input
             if (!email || !password) {
-                return res.render('pages/login', {
-                    title: 'Login - Solar Monitoring System',
-                    error: 'Please provide email and password',
-                    success: null,
-                    email,
-                    pageScripts: '' // Added this line
+                return res.status(400).json({
+                    success: false,
+                    message: 'Please provide email and password'
                 });
             }
             
@@ -48,35 +45,26 @@ class AuthController {
             const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
             
             if (!user) {
-                return res.render('pages/login', {
-                    title: 'Login - Solar Monitoring System',
-                    error: 'Invalid email or password',
-                    success: null,
-                    email,
-                    pageScripts: '' // Added this line
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid email or password'
                 });
             }
             
             // Check if user is active
             if (!user.isActive) {
-                return res.render('pages/login', {
-                    title: 'Login - Solar Monitoring System',
-                    error: 'Account is deactivated. Please contact administrator.',
-                    success: null,
-                    email,
-                    pageScripts: '' // Added this line
+                return res.status(403).json({
+                    success: false,
+                    message: 'Account is deactivated. Please contact administrator.'
                 });
             }
             
             // Check if account is locked
             if (user.isLocked()) {
                 const lockTime = Math.ceil((user.lockUntil - Date.now()) / (1000 * 60));
-                return res.render('pages/login', {
-                    title: 'Login - Solar Monitoring System',
-                    error: `Account is locked. Try again in ${lockTime} minutes.`,
-                    success: null,
-                    email,
-                    pageScripts: '' // Added this line
+                return res.status(423).json({
+                    success: false,
+                    message: `Account is locked. Try again in ${lockTime} minutes.`
                 });
             }
             
@@ -90,21 +78,15 @@ class AuthController {
                 const attemptsLeft = SYSTEM.MAX_LOGIN_ATTEMPTS - user.loginAttempts - 1;
                 
                 if (attemptsLeft <= 0) {
-                    return res.render('pages/login', {
-                        title: 'Login - Solar Monitoring System',
-                        error: 'Account locked due to too many failed attempts.',
-                        success: null,
-                        email,
-                        pageScripts: '' // Added this line
+                    return res.status(423).json({
+                        success: false,
+                        message: 'Account locked due to too many failed attempts.'
                     });
                 }
                 
-                return res.render('pages/login', {
-                    title: 'Login - Solar Monitoring System',
-                    error: `Invalid email or password. ${attemptsLeft} attempts left.`,
-                    success: null,
-                    email,
-                    pageScripts: '' // Added this line
+                return res.status(401).json({
+                    success: false,
+                    message: `Invalid email or password. ${attemptsLeft} attempts left.`
                 });
             }
             
@@ -124,25 +106,40 @@ class AuthController {
                 phone: user.phone
             };
             
-            // Set session expiration
-            req.session.cookie.maxAge = SYSTEM.SESSION_TIMEOUT * 60 * 1000;
+            // DON'T modify cookie.maxAge here - it causes the error
+            // The session config in server.js already handles this
             
-            // Redirect based on role
-            let redirectPath = '/dashboard';
-            if (req.query.redirect) {
-                redirectPath = req.query.redirect;
-            }
-            
-            res.redirect(redirectPath);
+            // Save session and respond
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Login failed. Please try again.'
+                    });
+                }
+                
+                // Determine redirect path
+                const redirectPath = req.query.redirect || '/dashboard';
+                
+                // Send success response
+                return res.json({
+                    success: true,
+                    message: 'Login successful',
+                    redirect: redirectPath,
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        role: user.role
+                    }
+                });
+            });
             
         } catch (error) {
             console.error('Login error:', error);
-            res.status(500).render('pages/login', {
-                title: 'Login - Solar Monitoring System',
-                error: 'An error occurred during login. Please try again.',
-                success: null,
-                email: req.body.email || '',
-                pageScripts: '' // Added this line
+            return res.status(500).json({
+                success: false,
+                message: 'An error occurred during login. Please try again.'
             });
         }
     }

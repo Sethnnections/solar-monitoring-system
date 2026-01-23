@@ -50,11 +50,20 @@ module.exports = {
     },
     
     // System Constants
+
     SYSTEM: {
-        DATA_LOG_INTERVAL: parseInt(process.env.DATA_LOG_INTERVAL) || 10, // seconds
-        ALERT_CHECK_INTERVAL: parseInt(process.env.ALERT_CHECK_INTERVAL) || 60, // seconds
-        REPORT_RETENTION_DAYS: parseInt(process.env.REPORT_RETENTION_DAYS) || 90,
-        MAX_LOGIN_ATTEMPTS: 5,
-        LOCKOUT_TIME: 15 * 60 * 1000, // 15 minutes
+        MAX_LOGIN_ATTEMPTS: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
+        LOCK_TIME: 30 * 60 * 1000, // 30 minutes in milliseconds
+        SESSION_TIMEOUT: parseInt(process.env.SESSION_TIMEOUT) || 30, // minutes
+        DATA_LOG_INTERVAL: parseInt(process.env.DATA_LOG_INTERVAL) || 10,
+        ALERT_CHECK_INTERVAL: parseInt(process.env.ALERT_CHECK_INTERVAL) || 60,
+        REPORT_RETENTION_DAYS: parseInt(process.env.REPORT_RETENTION_DAYS) || 90
     },
+    
+    ALERT_THRESHOLDS: {
+        VOLTAGE_LOW: parseFloat(process.env.VOLTAGE_THRESHOLD_LOW) || 20,
+        VOLTAGE_CRITICAL: parseFloat(process.env.VOLTAGE_THRESHOLD_CRITICAL) || 10,
+        CURRENT_LOW: parseFloat(process.env.CURRENT_THRESHOLD_LOW) || 15,
+        TEMPERATURE_HIGH: parseFloat(process.env.TEMPERATURE_THRESHOLD_HIGH) || 60
+    }
 };

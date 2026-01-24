@@ -87,4 +87,42 @@ router.delete('/api/reports/cleanup',
     ReportController.cleanupOldReports
 );
 
+// Add these routes to reportRoutes.js
+
+// Get report templates
+router.get('/api/reports/templates', 
+    ReportController.getReportTemplates
+);
+
+// Get report categories
+router.get('/api/reports/categories', 
+    ReportController.getReportCategories
+);
+
+// Get report trends
+router.get('/api/reports/trends', 
+    [
+        queryValidators.days
+    ],
+    validate,
+    ReportController.getReportTrends
+);
+
+// Clone report
+router.post('/api/reports/:id/clone', 
+    idParamValidator,
+    validate,
+    ReportController.cloneReport
+);
+
+// Schedule report
+router.post('/api/reports/schedule', 
+    ReportController.scheduleReport
+);
+
+// Get scheduled reports
+router.get('/api/reports/scheduled', 
+    ReportController.getScheduledReports
+);
+
 module.exports = router;

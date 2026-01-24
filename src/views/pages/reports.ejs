@@ -1,62 +1,549 @@
-<%- include('../partials/head', { title: 'Reports Center' }); %>
-<%- include('../partials/header'); %>
-<%- include('../partials/sidebar', { currentPath: '/reports' }); %>
 
-<main class="md:ml-64 pt-16 min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-4xl mx-auto">
-            <div class="text-center py-12">
-                <div class="inline-block p-4 bg-blue-100 rounded-full mb-6">
-                    <i class="fas fa-chart-bar text-blue-600 text-4xl"></i>
+<%- include('../partials/head', { 
+    title: 'Report Center - Solar Monitoring System',
+    extraStyles: `
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <style>
+            .report-card {
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+            }
+            .report-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                border-color: #3b82f6;
+            }
+            .format-badge {
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            .format-pdf { background-color: #dc2626; color: white; }
+            .format-excel { background-color: #059669; color: white; }
+            .format-csv { background-color: #2563eb; color: white; }
+            .format-json { background-color: #7c3aed; color: white; }
+            .category-card {
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            .category-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .category-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            }
+            .template-card {
+                border: 1px solid #e5e7eb;
+                border-radius: 0.5rem;
+                transition: all 0.2s ease;
+                cursor: pointer;
+            }
+            .template-card:hover {
+                border-color: #3b82f6;
+                box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+            }
+            .template-card.selected {
+                border-color: #3b82f6;
+                background-color: #eff6ff;
+            }
+            .animate-pulse {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+            .progress-bar {
+                transition: width 0.6s ease;
+            }
+            .sticky-header {
+                position: sticky;
+                top: 4rem;
+                z-index: 10;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+            }
+        </style>
+    ` 
+}); %>
+<%- include('../partials/header'); %>
+<%- include('../partials/sidebar'); %>
+
+<!-- Main Content -->
+<main class="md:ml-64 pt-16 min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Report Center</h1>
+                    <p class="text-gray-600">Generate, manage, and analyze system reports</p>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-4">Reports Center</h1>
-                <p class="text-lg text-gray-600 mb-8">Comprehensive reporting system coming soon. Generate detailed analytics and insights.</p>
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <!-- Quick Generate Button -->
+                    <button id="quickGenerateBtn" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-plus-circle mr-2"></i> Quick Generate
+                    </button>
+                    
+                    <!-- Templates Button -->
+                    <button id="templatesBtn" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-200">
+                        <i class="fas fa-layer-group mr-2"></i> Templates
+                    </button>
+                    
+                    <!-- Schedule Button -->
+                    <button id="scheduleBtn" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
+                        <i class="fas fa-calendar-alt mr-2"></i> Schedule
+                    </button>
+                    
+                    <!-- Refresh Button -->
+                    <button id="refreshReports" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Report Summary Cards -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                            <i class="fas fa-file-alt text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total Reports</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalReports">
+                                <%= stats ? stats.totalReports : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="flex items-center mb-4">
-                            <div class="p-3 bg-green-100 rounded-lg mr-4">
-                                <i class="fas fa-calendar-day text-green-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-800">Daily Reports</h3>
-                                <p class="text-gray-600 text-sm mt-1">24-hour performance summaries</p>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg mr-4">
+                            <i class="fas fa-download text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total Downloads</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalDownloads">
+                                Loading...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                            <i class="fas fa-chart-pie text-yellow-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Storage Used</p>
+                            <p class="text-2xl font-bold text-gray-800" id="storageUsed">
+                                <%= stats && stats.totalSize ? helpers.formatFileSize(stats.totalSize) : '0 MB' %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                            <i class="fas fa-bolt text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Recent Reports</p>
+                            <p class="text-2xl font-bold text-gray-800" id="recentReports">
+                                <%= stats && stats.recentReports ? stats.recentReports : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Report Categories -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Report Categories</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="category-card bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow duration-200" data-category="all">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-bar text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800">All Reports</h3>
+                    <p class="text-sm text-gray-600 mt-1" id="allCount">
+                        <%= stats ? stats.totalReports : 0 %>
+                    </p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow duration-200" data-category="performance">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800">Performance</h3>
+                    <p class="text-sm text-gray-600 mt-1" id="performanceCount">
+                        <%= stats && stats.byType && stats.byType.daily ? stats.byType.daily : 0 %>
+                    </p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow duration-200" data-category="analysis">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-bar text-yellow-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800">Analysis</h3>
+                    <p class="text-sm text-gray-600 mt-1" id="analysisCount">Loading...</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow duration-200" data-category="alerts">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800">Alerts</h3>
+                    <p class="text-sm text-gray-600 mt-1" id="alertsCount">Loading...</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow duration-200" data-category="maintenance">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-tools text-indigo-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800">Maintenance</h3>
+                    <p class="text-sm text-gray-600 mt-1" id="maintenanceCount">Loading...</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow duration-200" data-category="custom">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-content-center">
+                        <i class="fas fa-edit text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-800">Custom</h3>
+                    <p class="text-sm text-gray-600 mt-1" id="customCount">
+                        <%= stats && stats.byType && stats.byType.custom ? stats.byType.custom : 0 %>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Reports List -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow sticky-header">
+                    <div class="px-6 py-4 border-b">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <h2 class="text-lg font-semibold text-gray-800">Recent Reports</h2>
+                            <div class="mt-2 md:mt-0 flex space-x-2">
+                                <!-- Search -->
+                                <div class="relative">
+                                    <input type="text" id="searchReports" 
+                                           placeholder="Search reports..." 
+                                           class="px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm w-full md:w-64">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                                
+                                <!-- Filter Dropdown -->
+                                <div class="relative">
+                                    <select id="reportFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        <option value="all">All Reports</option>
+                                        <option value="public">Public Only</option>
+                                        <option value="mine">My Reports</option>
+                                        <option value="shared">Shared with Me</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="flex items-center mb-4">
-                            <div class="p-3 bg-purple-100 rounded-lg mr-4">
-                                <i class="fas fa-calendar-week text-purple-600"></i>
+                    <div class="p-4">
+                        <div class="space-y-4" id="reportsList">
+                            <% if (reports && reports.length > 0) { %>
+                                <% reports.forEach(function(report) { %>
+                                    <div class="report-card bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                                            <!-- Report Info -->
+                                            <div class="flex-1">
+                                                <div class="flex items-start justify-between">
+                                                    <div>
+                                                        <h3 class="font-semibold text-gray-800 text-lg">
+                                                            <%= report.title %>
+                                                        </h3>
+                                                        <div class="flex items-center mt-1 space-x-3">
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                <i class="fas 
+                                                                    <%= report.type === 'daily' ? 'fa-calendar-day' : 
+                                                                       report.type === 'weekly' ? 'fa-calendar-week' : 
+                                                                       report.type === 'monthly' ? 'fa-calendar-alt' : 
+                                                                       'fa-edit' %> mr-1">
+                                                                </i>
+                                                                <%= report.type %>
+                                                            </span>
+                                                            <span class="format-badge format-<%= report.format %>">
+                                                                <%= report.format %>
+                                                            </span>
+                                                            <% if (report.isPublic) { %>
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                    <i class="fas fa-globe mr-1"></i>Public
+                                                                </span>
+                                                            <% } %>
+                                                        </div>
+                                                        <p class="text-sm text-gray-600 mt-2">
+                                                            Period: <%= report.formattedPeriod %>
+                                                            <span class="mx-2">•</span>
+                                                            <%= report.durationDays %> days
+                                                        </p>
+                                                        <div class="flex items-center mt-2 text-sm text-gray-500">
+                                                            <i class="fas fa-user mr-1"></i>
+                                                            <span><%= report.generatedBy.name %></span>
+                                                            <span class="mx-2">•</span>
+                                                            <i class="fas fa-clock mr-1"></i>
+                                                            <span><%= helpers.timeAgo(report.createdAt) %></span>
+                                                            <span class="mx-2">•</span>
+                                                            <i class="fas fa-download mr-1"></i>
+                                                            <span><%= report.downloadCount || 0 %> downloads</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- File Size -->
+                                                    <div class="text-right ml-4">
+                                                        <div class="text-sm font-medium text-gray-800">
+                                                        <%= stats && stats.totalSize ? helpers.formatFileSize(stats.totalSize) : '0 Bytes   ' %>
+                                                        </div>
+                                                        <div class="text-xs text-gray-500">
+                                                            <%= report.format.toUpperCase() %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Summary Stats -->
+                                                <% if (report.summary && report.summary.totalEnergy) { %>
+                                                <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                    <div class="bg-gray-50 p-2 rounded text-center">
+                                                        <div class="text-xs text-gray-500">Energy</div>
+                                                        <div class="font-semibold text-gray-800">
+                                                            <%= report.summary.totalEnergy.toFixed(2) %> kWh
+                                                        </div>
+                                                    </div>
+                                                    <div class="bg-gray-50 p-2 rounded text-center">
+                                                        <div class="text-xs text-gray-500">Avg Voltage</div>
+                                                        <div class="font-semibold text-gray-800">
+                                                            <%= report.summary.avgVoltage.toFixed(1) %> V
+                                                        </div>
+                                                    </div>
+                                                    <div class="bg-gray-50 p-2 rounded text-center">
+                                                        <div class="text-xs text-gray-500">Peak Power</div>
+                                                        <div class="font-semibold text-gray-800">
+                                                            <%= report.summary.peakPower.toFixed(1) %> W
+                                                        </div>
+                                                    </div>
+                                                    <div class="bg-gray-50 p-2 rounded text-center">
+                                                        <div class="text-xs text-gray-500">Data Points</div>
+                                                        <div class="font-semibold text-gray-800">
+                                                            <%= report.summary.dataPoints %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="mt-4 flex flex-wrap gap-2">
+                                            <button class="download-btn inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition duration-200" 
+                                                    data-id="<%= report._id %>">
+                                                <i class="fas fa-download mr-2"></i>Download
+                                            </button>
+                                            <% if (report.format === 'pdf') { %>
+                                            <button class="preview-btn inline-flex items-center px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition duration-200" 
+                                                    data-id="<%= report._id %>">
+                                                <i class="fas fa-eye mr-2"></i>Preview
+                                            </button>
+                                            <% } %>
+                                            <button class="share-btn inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition duration-200" 
+                                                    data-id="<%= report._id %>">
+                                                <i class="fas fa-share-alt mr-2"></i>Share
+                                            </button>
+                                            <button class="clone-btn inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition duration-200" 
+                                                    data-id="<%= report._id %>">
+                                                <i class="fas fa-copy mr-2"></i>Clone
+                                            </button>
+                                            <% if (user.role === 'admin' || report.generatedBy._id.toString() === user.id) { %>
+                                            <button class="delete-btn inline-flex items-center px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition duration-200" 
+                                                    data-id="<%= report._id %>">
+                                                <i class="fas fa-trash mr-2"></i>Delete
+                                            </button>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="text-center py-12 text-gray-500">
+                                    <i class="fas fa-file-alt text-4xl mb-3 text-gray-300"></i>
+                                    <p class="text-lg">No reports found</p>
+                                    <p class="text-sm mt-1">Generate your first report using the templates or quick generate</p>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <% if (pagination) { %>
+                            <div class="mt-6 flex items-center justify-between">
+                                <div class="text-sm text-gray-700">
+                                    Showing <span class="font-medium"><%= pagination.startItem %></span> to 
+                                    <span class="font-medium"><%= pagination.endItem %></span> of 
+                                    <span class="font-medium"><%= pagination.total %></span> reports
+        </div>
+        <div class="flex space-x-2">
+            <% if (pagination.prevPage) { %>
+                <a href="?<%= new URLSearchParams({...filters, page: pagination.prevPage }).toString() %>" 
+                   class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Previous
+                </a>
+            <% } %>
+            <% if (pagination.pages && pagination.pages.length > 0) { %>
+                <% pagination.pages.forEach(function(page) { %>
+                    <% if (page.number === pagination.currentPage) { %>
+                        <span class="px-3 py-2 bg-blue-600 border border-blue-600 rounded-lg text-sm font-medium text-white">
+                            <%= page.number %>
+                        </span>
+                    <% } else { %>
+                        <a href="?<%= new URLSearchParams({...filters, page: page.number }).toString() %>" 
+                           class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <%= page.number %>
+                        </a>
+                    <% } %>
+                <% }); %>
+            <% } %>
+                                    
+                                    <% if (pagination.nextPage) { %>
+                                        <a href="?<%= new URLSearchParams({...filters, page: pagination.nextPage }).toString() %>" 
+                                           class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            Next
+                                        </a>
+                                    <% } %>
+                                </div>
                             </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <!-- Generate Report Card -->
+                <div class="bg-white rounded-lg shadow mb-6">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Generate Report</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-4">
+                            <!-- Report Type -->
                             <div>
-                                <h3 class="font-semibold text-gray-800">Weekly Reports</h3>
-                                <p class="text-gray-600 text-sm mt-1">7-day trend analysis</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                                <select id="reportType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <% Object.entries(reportTypes).forEach(function([key, value]) { %>
+                                        <option value="<%= key %>"><%= value %></option>
+                                    <% }); %>
+                                </select>
                             </div>
+                            
+                            <!-- Date Range -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                                <input type="text" id="reportDateRange" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Select date range">
+                            </div>
+                            
+                            <!-- Format -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="format" value="pdf" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                        <span class="ml-2 text-sm text-gray-700">PDF</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="format" value="excel" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Excel</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="format" value="csv" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">CSV</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="format" value="json" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">JSON</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Options -->
+                            <div class="space-y-2">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="includeCharts" class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Include Charts</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="includeRawData" class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Include Raw Data</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="sendEmail" class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Send via Email</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Generate Button -->
+                            <button id="generateReportBtn" class="w-full inline-flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
+                                <i class="fas fa-magic mr-2"></i> Generate Report
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="flex items-center mb-4">
-                            <div class="p-3 bg-orange-100 rounded-lg mr-4">
-                                <i class="fas fa-calendar-alt text-orange-600"></i>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Quick Stats</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Reports Today</span>
+                                <span class="font-medium text-gray-800" id="reportsToday">0</span>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-800">Monthly Reports</h3>
-                                <p class="text-gray-600 text-sm mt-1">30-day performance overview</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Reports This Week</span>
+                                <span class="font-medium text-gray-800" id="reportsThisWeek">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Storage Available</span>
+                                <span class="font-medium text-gray-800" id="storageAvailable">10 GB</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Avg. Report Size</span>
+                                <span class="font-medium text-gray-800" id="avgReportSize">
+                                    <%= stats && stats.avgSize ? helpers.formatFileSize(stats.avgSize) : '0 MB' %>
+                                </span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="flex items-center mb-4">
-                            <div class="p-3 bg-red-100 rounded-lg mr-4">
-                                <i class="fas fa-file-pdf text-red-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-800">Export Reports</h3>
-                                <p class="text-gray-600 text-sm mt-1">PDF, Excel, CSV formats</p>
+                        
+                        <!-- Popular Reports -->
+                        <div class="mt-6">
+                            <h3 class="text-sm font-medium text-gray-700 mb-2">Most Popular</h3>
+                            <div class="space-y-2" id="popularReports">
+                                <!-- Will be loaded via JavaScript -->
+                                <div class="text-center py-4 text-gray-400">
+                                    <i class="fas fa-chart-line text-2xl mb-2"></i>
+                                    <p class="text-sm">Loading popular reports...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -66,5 +553,1084 @@
     </div>
 </main>
 
+<!-- Modals -->
+<!-- Quick Generate Modal -->
+<div id="quickGenerateModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Quick Generate Report</h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="quick-template-btn p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition duration-200 text-center" data-template="daily">
+                        <i class="fas fa-sun text-blue-600 text-2xl mb-2"></i>
+                        <h4 class="font-medium text-gray-800">Daily Report</h4>
+                        <p class="text-xs text-gray-600 mt-1">Last 24 hours</p>
+                    </button>
+                    <button class="quick-template-btn p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition duration-200 text-center" data-template="weekly">
+                        <i class="fas fa-calendar-week text-green-600 text-2xl mb-2"></i>
+                        <h4 class="font-medium text-gray-800">Weekly Report</h4>
+                        <p class="text-xs text-gray-600 mt-1">Last 7 days</p>
+                    </button>
+                    <button class="quick-template-btn p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition duration-200 text-center" data-template="monthly">
+                        <i class="fas fa-calendar-alt text-yellow-600 text-2xl mb-2"></i>
+                        <h4 class="font-medium text-gray-800">Monthly Report</h4>
+                        <p class="text-xs text-gray-600 mt-1">Last 30 days</p>
+                    </button>
+                    <button class="quick-template-btn p-4 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition duration-200 text-center" data-template="alert_summary">
+                        <i class="fas fa-exclamation-triangle text-purple-600 text-2xl mb-2"></i>
+                        <h4 class="font-medium text-gray-800">Alert Summary</h4>
+                        <p class="text-xs text-gray-600 mt-1">Recent alerts</p>
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                    <select id="quickFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+            <button id="cancelQuickGenerate" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+            </button>
+            <button id="confirmQuickGenerate" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                Generate
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Templates Modal -->
+<div id="templatesModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Report Templates</h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="templatesList">
+                <!-- Templates will be loaded here -->
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
+            <button id="closeTemplates" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Share Report Modal -->
+<div id="shareReportModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Share Report</h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Report ID</label>
+                    <div class="flex">
+                        <input type="text" id="shareReportId" class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" readonly>
+                        <button id="copyShareId" class="px-4 py-2 bg-gray-200 text-gray-700 border border-l-0 border-gray-300 rounded-r-lg hover:bg-gray-300">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Share with Users</label>
+                    <select id="shareUsers" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" multiple>
+                        <!-- Will be populated with users -->
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Cmd on Mac) to select multiple users</p>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="makePublic" class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded">
+                    <label for="makePublic" class="ml-2 text-sm text-gray-700">Make report public (visible to all users)</label>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+            <button id="cancelShare" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+            </button>
+            <button id="confirmShare" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                Share
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Report Modal -->
+<div id="scheduleModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Schedule Report</h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Template</label>
+                    <select id="scheduleTemplate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="daily_performance">Daily Performance Report</option>
+                        <option value="weekly_summary">Weekly Summary Report</option>
+                        <option value="monthly_analysis">Monthly Analysis Report</option>
+                        <option value="alert_summary">Alert Summary Report</option>
+                        <option value="system_health">System Health Report</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Schedule</label>
+                    <select id="scheduleFrequency" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="customScheduleFields" class="hidden space-y-2">
+                    <input type="text" id="customScheduleTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Select date and time">
+                    <p class="text-xs text-gray-500">Enter date and time for one-time generation</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Recipients (optional)</label>
+                    <input type="text" id="scheduleRecipients" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter email addresses separated by commas">
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="enableSchedule" class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded" checked>
+                    <label for="enableSchedule" class="ml-2 text-sm text-gray-700">Enable schedule immediately</label>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+            <button id="cancelSchedule" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+            </button>
+            <button id="confirmSchedule" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+                Schedule
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2" id="loadingTitle">Generating Report</h3>
+            <p class="text-sm text-gray-600 mb-4" id="loadingMessage">Please wait while we generate your report...</p>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="loadingProgress" class="bg-blue-600 h-2 rounded-full progress-bar" style="width: 0%"></div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2" id="loadingProgressText">0% complete</p>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+
+
+// Helper functions for formatting
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    
+    let interval = Math.floor(seconds / 31536000);
+    if (interval >= 1) return interval + ' year' + (interval > 1 ? 's' : '') + ' ago';
+    
+    interval = Math.floor(seconds / 2592000);
+    if (interval >= 1) return interval + ' month' + (interval > 1 ? 's' : '') + ' ago';
+    
+    interval = Math.floor(seconds / 86400);
+    if (interval >= 1) return interval + ' day' + (interval > 1 ? 's' : '') + ' ago';
+    
+    interval = Math.floor(seconds / 3600);
+    if (interval >= 1) return interval + ' hour' + (interval > 1 ? 's' : '') + ' ago';
+    
+    interval = Math.floor(seconds / 60);
+    if (interval >= 1) return interval + ' minute' + (interval > 1 ? 's' : '') + ' ago';
+    
+    return 'just now';
+}
+
+// Also add this function to handle report file size display
+function formatReportFileSize(fileSize) {
+    return formatFileSize(fileSize);
+}
+
+
+// Global variables
+let currentReportId = null;
+let currentTemplate = null;
+let selectedTemplate = null;
+
+// Initialize date picker
+flatpickr("#reportDateRange", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    maxDate: "today",
+    defaultDate: [new Date().fp_incr(-7), new Date().fp_incr(-1)]
+});
+
+// Initialize custom schedule date picker
+flatpickr("#customScheduleTime", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    minDate: "today"
+});
+
+// DOM Content Loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize
+    loadReportStats();
+    loadPopularReports();
+    loadCategoryCounts();
+    setupEventListeners();
+});
+
+// Load report statistics
+async function loadReportStats() {
+    try {
+        const response = await fetch('/api/reports/stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('totalDownloads').textContent = 
+                data.totalDownloads || 0;
+            document.getElementById('storageAvailable').textContent = 
+                data.storageAvailable || '10 GB';
+        }
+    } catch (error) {
+        console.error('Error loading report stats:', error);
+    }
+}
+
+// Load popular reports
+async function loadPopularReports() {
+    try {
+        const response = await fetch('/api/reports/popular?limit=5');
+        const data = await response.json();
+        
+        const container = document.getElementById('popularReports');
+        container.innerHTML = '';
+        
+        if (data.success && data.data.length > 0) {
+            data.data.forEach(report => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-medium text-sm text-gray-800">${report.title}</div>
+                        <div class="text-xs text-gray-500">${report.type} • ${report.downloadCount} downloads</div>
+                    </div>
+                    <button class="download-btn px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded hover:bg-blue-200"
+                            data-id="${report._id}">
+                        <i class="fas fa-download"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        } else {
+            container.innerHTML = `
+                <div class="text-center py-4 text-gray-400">
+                    <i class="fas fa-chart-line text-2xl mb-2"></i>
+                    <p class="text-sm">No popular reports yet</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading popular reports:', error);
+    }
+}
+
+// Load category counts
+async function loadCategoryCounts() {
+    try {
+        const response = await fetch('/api/reports/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+            data.categories.forEach(category => {
+                const element = document.getElementById(`${category.id}Count`);
+                if (element) {
+                    element.textContent = category.count || 0;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading category counts:', error);
+    }
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Quick Generate Button
+    document.getElementById('quickGenerateBtn').addEventListener('click', () => {
+        showModal('quickGenerateModal');
+    });
+    
+    // Templates Button
+    document.getElementById('templatesBtn').addEventListener('click', async () => {
+        await loadTemplates();
+        showModal('templatesModal');
+    });
+    
+    // Schedule Button
+    document.getElementById('scheduleBtn').addEventListener('click', () => {
+        showModal('scheduleModal');
+    });
+    
+    // Refresh Button
+    document.getElementById('refreshReports').addEventListener('click', () => {
+        location.reload();
+    });
+    
+    // Generate Report Button
+    document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+    
+    // Search functionality
+    document.getElementById('searchReports').addEventListener('input', debounce(searchReports, 300));
+    
+    // Filter functionality
+    document.getElementById('reportFilter').addEventListener('change', filterReports);
+    
+    // Category cards
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const category = card.dataset.category;
+            filterByCategory(category);
+        });
+    });
+    
+    // Quick template buttons
+    document.querySelectorAll('.quick-template-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedTemplate = btn.dataset.template;
+            btn.classList.add('selected');
+            document.querySelectorAll('.quick-template-btn').forEach(b => {
+                if (b !== btn) b.classList.remove('selected');
+            });
+        });
+    });
+    
+    // Schedule frequency change
+    document.getElementById('scheduleFrequency').addEventListener('change', function() {
+        document.getElementById('customScheduleFields').classList.toggle('hidden', this.value !== 'custom');
+    });
+    
+    // Modal close buttons
+    document.getElementById('cancelQuickGenerate').addEventListener('click', () => hideModal('quickGenerateModal'));
+    document.getElementById('closeTemplates').addEventListener('click', () => hideModal('templatesModal'));
+    document.getElementById('cancelShare').addEventListener('click', () => hideModal('shareReportModal'));
+    document.getElementById('cancelSchedule').addEventListener('click', () => hideModal('scheduleModal'));
+    
+    // Confirm actions
+    document.getElementById('confirmQuickGenerate').addEventListener('click', confirmQuickGenerate);
+    document.getElementById('confirmShare').addEventListener('click', confirmShare);
+    document.getElementById('confirmSchedule').addEventListener('click', confirmSchedule);
+    document.getElementById('copyShareId').addEventListener('click', copyShareId);
+}
+
+// Modal functions
+function showModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+// Load templates
+async function loadTemplates() {
+    try {
+        const response = await fetch('/api/reports/templates');
+        const data = await response.json();
+        
+        const container = document.getElementById('templatesList');
+        container.innerHTML = '';
+        
+        if (data.success && data.templates.length > 0) {
+            data.templates.forEach(template => {
+                const div = document.createElement('div');
+                div.className = 'template-card p-4 cursor-pointer';
+                div.dataset.id = template.id;
+                div.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="p-3 rounded-lg bg-${getColorForTemplate(template.type)}-100 mr-3">
+                            <i class="fas ${getIconForTemplate(template.type)} text-${getColorForTemplate(template.type)}-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-800">${template.name}</h4>
+                            <p class="text-sm text-gray-600 mt-1">${template.description}</p>
+                            <div class="mt-2 flex items-center text-xs text-gray-500">
+                                <span class="mr-3">${template.type}</span>
+                                <span>${template.defaultFormat}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                div.addEventListener('click', () => {
+                    selectTemplate(template);
+                });
+                
+                container.appendChild(div);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading templates:', error);
+    }
+}
+
+// Template helpers
+function getColorForTemplate(type) {
+    const colors = {
+        daily: 'blue',
+        weekly: 'green',
+        monthly: 'yellow',
+        custom: 'purple'
+    };
+    return colors[type] || 'gray';
+}
+
+function getIconForTemplate(type) {
+    const icons = {
+        daily: 'fa-sun',
+        weekly: 'fa-calendar-week',
+        monthly: 'fa-calendar-alt',
+        custom: 'fa-edit'
+    };
+    return icons[type] || 'fa-file-alt';
+}
+
+function selectTemplate(template) {
+    selectedTemplate = template;
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // Auto-fill form
+    document.getElementById('reportType').value = template.type;
+    // Set date range based on template
+    // Hide modal and show confirmation
+    hideModal('templatesModal');
+    
+    Swal.fire({
+        title: `Use ${template.name}?`,
+        text: template.description,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Generate Now',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            generateFromTemplate(template);
+        }
+    });
+}
+
+// Generate report
+async function generateReport() {
+    const reportType = document.getElementById('reportType').value;
+    const dateRange = document.getElementById('reportDateRange').value;
+    const format = document.querySelector('input[name="format"]:checked').value;
+    const includeCharts = document.getElementById('includeCharts').checked;
+    const includeRawData = document.getElementById('includeRawData').checked;
+    const sendEmail = document.getElementById('sendEmail').checked;
+    
+    if (!dateRange) {
+        Swal.fire('Error', 'Please select a date range', 'error');
+        return;
+    }
+    
+    const [startDate, endDate] = dateRange.split(' to ');
+    
+    showLoading('Generating Report', 'Please wait while we generate your report...');
+    
+    try {
+        const response = await fetch('/api/reports/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: reportType,
+                format: format,
+                startDate: startDate,
+                endDate: endDate,
+                includeRawData: includeRawData,
+                emailRecipients: sendEmail ? [/* user email */] : []
+            })
+        });
+        
+        const data = await response.json();
+        
+        hideLoading();
+        
+        if (data.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Report generated successfully',
+                icon: 'success',
+                confirmButtonText: 'Download',
+                showCancelButton: true,
+                cancelButtonText: 'View Details'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Download the report
+                    window.location.href = data.data.downloadUrl;
+                } else {
+                    // Show report details
+                    showReportDetails(data.data);
+                }
+            });
+        } else {
+            Swal.fire('Error', data.message || 'Failed to generate report', 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        Swal.fire('Error', 'Failed to generate report: ' + error.message, 'error');
+    }
+}
+
+// Confirm quick generate
+function confirmQuickGenerate() {
+    if (!selectedTemplate) {
+        Swal.fire('Error', 'Please select a template', 'error');
+        return;
+    }
+    
+    const format = document.getElementById('quickFormat').value;
+    
+    hideModal('quickGenerateModal');
+    
+    showLoading('Generating Report', 'Creating your report...');
+    
+    // Simulate report generation
+    simulateReportGeneration(selectedTemplate, format);
+}
+
+// Simulate report generation with progress
+function simulateReportGeneration(template, format) {
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 10;
+        updateLoadingProgress(progress, `Processing... ${progress}%`);
+        
+        if (progress >= 100) {
+            clearInterval(progressInterval);
+            hideLoading();
+            
+            Swal.fire({
+                title: 'Report Ready!',
+                text: `${template} report has been generated.`,
+                icon: 'success',
+                confirmButtonText: 'Download',
+                showCancelButton: true,
+                cancelButtonText: 'Close'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // In real app, this would download the actual file
+                    // For now, show success
+                    Swal.fire('Success', 'Report download started', 'success');
+                }
+            });
+        }
+    }, 300);
+}
+
+// Generate from template
+function generateFromTemplate(template) {
+    // Set form values based on template
+    document.getElementById('reportType').value = template.type;
+    // Set appropriate date range based on template type
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch(template.type) {
+        case 'daily':
+            startDate = new Date(now.setDate(now.getDate() - 1));
+            endDate = new Date();
+            break;
+        case 'weekly':
+            startDate = new Date(now.setDate(now.getDate() - 7));
+            endDate = new Date();
+            break;
+        case 'monthly':
+            startDate = new Date(now.setMonth(now.getMonth() - 1));
+            endDate = new Date();
+            break;
+        default:
+            startDate = new Date(now.setDate(now.getDate() - 7));
+            endDate = new Date();
+    }
+    
+    // Format dates for flatpickr
+    const dateRange = `${formatDate(startDate)} to ${formatDate(endDate)}`;
+    document.getElementById('reportDateRange').value = dateRange;
+    
+    // Trigger generation
+    setTimeout(() => {
+        document.getElementById('generateReportBtn').click();
+    }, 100);
+}
+
+// Format date for flatpickr
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+// Confirm share
+async function confirmShare() {
+    const reportId = document.getElementById('shareReportId').value;
+    const users = Array.from(document.getElementById('shareUsers').selectedOptions).map(opt => opt.value);
+    const makePublic = document.getElementById('makePublic').checked;
+    
+    try {
+        const response = await fetch(`/api/reports/${reportId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                isPublic: makePublic,
+                sharedWith: users
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire('Success', 'Report shared successfully', 'success');
+            hideModal('shareReportModal');
+            location.reload(); // Refresh to show updated sharing
+        } else {
+            Swal.fire('Error', data.message || 'Failed to share report', 'error');
+        }
+    } catch (error) {
+        Swal.fire('Error', 'Failed to share report: ' + error.message, 'error');
+    }
+}
+
+// Copy share ID
+function copyShareId() {
+    const input = document.getElementById('shareReportId');
+    input.select();
+    document.execCommand('copy');
+    Swal.fire('Copied!', 'Report ID copied to clipboard', 'success');
+}
+
+// Confirm schedule
+async function confirmSchedule() {
+    const template = document.getElementById('scheduleTemplate').value;
+    const frequency = document.getElementById('scheduleFrequency').value;
+    const customTime = document.getElementById('customScheduleTime').value;
+    const recipients = document.getElementById('scheduleRecipients').value;
+    const enableSchedule = document.getElementById('enableSchedule').checked;
+    
+    const scheduleData = {
+        templateId: template,
+        scheduleType: frequency,
+        recipients: recipients ? recipients.split(',').map(email => email.trim()) : [],
+        format: 'pdf',
+        includeCharts: true
+    };
+    
+    if (frequency === 'custom' && customTime) {
+        scheduleData.scheduleTime = customTime;
+    }
+    
+    try {
+        const response = await fetch('/api/reports/schedule', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(scheduleData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire({
+                title: 'Scheduled!',
+                text: `Report scheduled for ${frequency} delivery`,
+                icon: 'success',
+                confirmButtonText: 'View Schedules',
+                showCancelButton: true,
+                cancelButtonText: 'Close'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // View scheduled reports
+                    viewScheduledReports();
+                }
+            });
+            
+            hideModal('scheduleModal');
+        } else {
+            Swal.fire('Error', data.message || 'Failed to schedule report', 'error');
+        }
+    } catch (error) {
+        Swal.fire('Error', 'Failed to schedule report: ' + error.message, 'error');
+    }
+}
+
+// View scheduled reports
+async function viewScheduledReports() {
+    try {
+        const response = await fetch('/api/reports/scheduled');
+        const data = await response.json();
+        
+        if (data.success) {
+            let scheduleList = '<div class="space-y-3">';
+            data.scheduledReports.forEach(schedule => {
+                scheduleList += `
+                    <div class="p-3 border border-gray-200 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h4 class="font-medium text-gray-800">${schedule.name}</h4>
+                                <div class="text-sm text-gray-600">
+                                    ${schedule.scheduleType} • Next: ${new Date(schedule.nextRun).toLocaleString()}
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full ${schedule.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                ${schedule.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            scheduleList += '</div>';
+            
+            Swal.fire({
+                title: 'Scheduled Reports',
+                html: scheduleList,
+                width: 600,
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+    } catch (error) {
+        Swal.fire('Error', 'Failed to load scheduled reports', 'error');
+    }
+}
+
+// Report action handlers (delegated events)
+document.addEventListener('click', async function(e) {
+    // Download button
+    if (e.target.closest('.download-btn')) {
+        const btn = e.target.closest('.download-btn');
+        const reportId = btn.dataset.id;
+        await downloadReport(reportId);
+    }
+    
+    // Preview button
+    if (e.target.closest('.preview-btn')) {
+        const btn = e.target.closest('.preview-btn');
+        const reportId = btn.dataset.id;
+        await previewReport(reportId);
+    }
+    
+    // Share button
+    if (e.target.closest('.share-btn')) {
+        const btn = e.target.closest('.share-btn');
+        const reportId = btn.dataset.id;
+        await shareReport(reportId);
+    }
+    
+    // Clone button
+    if (e.target.closest('.clone-btn')) {
+        const btn = e.target.closest('.clone-btn');
+        const reportId = btn.dataset.id;
+        await cloneReport(reportId);
+    }
+    
+    // Delete button
+    if (e.target.closest('.delete-btn')) {
+        const btn = e.target.closest('.delete-btn');
+        const reportId = btn.dataset.id;
+        await deleteReport(reportId);
+    }
+});
+
+// Download report
+async function downloadReport(reportId) {
+    try {
+        window.location.href = `/api/reports/download/${reportId}`;
+    } catch (error) {
+        Swal.fire('Error', 'Failed to download report: ' + error.message, 'error');
+    }
+}
+
+// Preview report
+async function previewReport(reportId) {
+    try {
+        window.open(`/api/reports/preview/${reportId}`, '_blank');
+    } catch (error) {
+        Swal.fire('Error', 'Failed to preview report: ' + error.message, 'error');
+    }
+}
+
+// Share report
+async function shareReport(reportId) {
+    currentReportId = reportId;
+    document.getElementById('shareReportId').value = reportId;
+    
+    // Load users for sharing
+    try {
+        const response = await fetch('/api/users?role=all');
+        const data = await response.json();
+        
+        const select = document.getElementById('shareUsers');
+        select.innerHTML = '';
+        
+        if (data.success && data.data.length > 0) {
+            data.data.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user._id;
+                option.textContent = `${user.name} (${user.email})`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+    
+    showModal('shareReportModal');
+}
+
+// Clone report
+async function cloneReport(reportId) {
+    Swal.fire({
+        title: 'Clone Report?',
+        text: 'Create a copy of this report',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Clone',
+        cancelButtonText: 'Cancel'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                showLoading('Cloning Report', 'Creating a copy of the report...');
+                
+                const response = await fetch(`/api/reports/${reportId}/clone`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                hideLoading();
+                
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Cloned!',
+                        text: 'Report cloned successfully',
+                        icon: 'success',
+                        confirmButtonText: 'Download Clone',
+                        showCancelButton: true,
+                        cancelButtonText: 'View'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = data.data.downloadUrl;
+                        } else {
+                            location.reload();
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to clone report', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                Swal.fire('Error', 'Failed to clone report: ' + error.message, 'error');
+            }
+        }
+    });
+}
+
+// Delete report
+async function deleteReport(reportId) {
+    Swal.fire({
+        title: 'Delete Report?',
+        text: 'This action cannot be undone',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc2626'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/api/reports/${reportId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire('Deleted!', 'Report deleted successfully', 'success');
+                    // Remove report from DOM
+                    const reportCard = document.querySelector(`.delete-btn[data-id="${reportId}"]`).closest('.report-card');
+                    reportCard.remove();
+                    
+                    // Update counts
+                    updateCountsAfterDeletion();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to delete report', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Failed to delete report: ' + error.message, 'error');
+            }
+        }
+    });
+}
+
+// Update counts after deletion
+function updateCountsAfterDeletion() {
+    const totalReports = document.getElementById('totalReports');
+    const currentCount = parseInt(totalReports.textContent);
+    if (currentCount > 0) {
+        totalReports.textContent = currentCount - 1;
+    }
+    
+    // TODO: Update other counts as needed
+}
+
+// Search reports
+function searchReports() {
+    const searchTerm = document.getElementById('searchReports').value.toLowerCase();
+    const reportCards = document.querySelectorAll('.report-card');
+    
+    reportCards.forEach(card => {
+        const title = card.querySelector('h3').textContent.toLowerCase();
+        const description = card.querySelector('p').textContent.toLowerCase();
+        
+        if (title.includes(searchTerm) || description.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Filter reports
+function filterReports() {
+    const filterValue = document.getElementById('reportFilter').value;
+    const reportCards = document.querySelectorAll('.report-card');
+    
+    // This would need server-side implementation
+    // For now, just show all
+    reportCards.forEach(card => {
+        card.style.display = 'block';
+    });
+}
+
+// Filter by category
+function filterByCategory(category) {
+    // This would typically make a server request
+    // For now, just update UI
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('bg-blue-50', 'border-blue-200');
+    });
+    
+    const selectedCard = document.querySelector(`.category-card[data-category="${category}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('bg-blue-50', 'border-blue-200');
+    }
+    
+    // TODO: Load reports for this category
+}
+
+// Show report details
+function showReportDetails(reportData) {
+    Swal.fire({
+        title: reportData.title,
+        html: `
+            <div class="text-left">
+                <p><strong>Type:</strong> ${reportData.type}</p>
+                <p><strong>Format:</strong> ${reportData.format}</p>
+                <p><strong>Generated:</strong> ${new Date(reportData.generatedAt).toLocaleString()}</p>
+                <p><strong>Size:</strong> ${reportData.fileSize || 'N/A'}</p>
+                <div class="mt-4">
+                    <a href="${reportData.downloadUrl}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        <i class="fas fa-download mr-2"></i>Download
+                    </a>
+                    ${reportData.format === 'pdf' ? `
+                        <a href="${reportData.previewUrl}" target="_blank" class="inline-block ml-2 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                            <i class="fas fa-eye mr-2"></i>Preview
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: 500
+    });
+}
+
+// Loading functions
+function showLoading(title, message) {
+    document.getElementById('loadingTitle').textContent = title;
+    document.getElementById('loadingMessage').textContent = message;
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    updateLoadingProgress(0, '0% complete');
+}
+
+function updateLoadingProgress(progress, text) {
+    document.getElementById('loadingProgress').style.width = `${progress}%`;
+    document.getElementById('loadingProgressText').textContent = text;
+}
+
+// Utility functions
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Initialize when page loads
+window.addEventListener('load', () => {
+    // Set today's date in the date picker if empty
+    const dateRange = document.getElementById('reportDateRange');
+    if (!dateRange.value) {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        dateRange.value = `${yesterday.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]}`;
+    }
+});
+</script>
+
 <%- include('../partials/footer'); %>
-<%- include('../partials/scripts'); %>

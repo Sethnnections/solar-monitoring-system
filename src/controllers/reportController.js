@@ -809,6 +809,444 @@ class ReportController {
             });
         }
     }
+
+        // Add these methods to the ReportController class
+
+// Get report templates (API)
+static async getReportTemplates(req, res) {
+    try {
+        const templates = [
+            {
+                id: 'daily_performance',
+                name: 'Daily Performance Report',
+                type: 'daily',
+                description: 'Daily system performance and energy production',
+                defaultFormat: 'pdf',
+                charts: ['energy_production', 'voltage_trend', 'temperature_trend']
+            },
+            {
+                id: 'weekly_summary',
+                name: 'Weekly Summary Report',
+                type: 'weekly',
+                description: 'Weekly summary with trends and comparisons',
+                defaultFormat: 'pdf',
+                charts: ['weekly_comparison', 'efficiency_analysis', 'alert_summary']
+            },
+            {
+                id: 'monthly_analysis',
+                name: 'Monthly Analysis Report',
+                type: 'monthly',
+                description: 'Comprehensive monthly analysis with recommendations',
+                defaultFormat: 'pdf',
+                charts: ['monthly_trends', 'performance_metrics', 'maintenance_schedule']
+            },
+            {
+                id: 'custom_analysis',
+                name: 'Custom Analysis Report',
+                type: 'custom',
+                description: 'Custom report with selected parameters',
+                defaultFormat: 'pdf',
+                charts: ['custom_charts']
+            },
+            {
+                id: 'alert_summary',
+                name: 'Alert Summary Report',
+                type: 'custom',
+                description: 'Summary of alerts and incidents',
+                defaultFormat: 'pdf',
+                charts: ['alert_trends', 'severity_distribution', 'resolution_time']
+            },
+            {
+                id: 'system_health',
+                name: 'System Health Report',
+                type: 'custom',
+                description: 'Complete system health assessment',
+                defaultFormat: 'pdf',
+                charts: ['health_metrics', 'component_status', 'predictive_analysis']
+            }
+        ];
+        
+        res.json({
+            success: true,
+            templates
+        });
+        
+    } catch (error) {
+        console.error('Get report templates error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get report templates',
+            error: error.message
+        });
+    }
+}
+
+// Get report categories (API)
+static async getReportCategories(req, res) {
+    try {
+        const categories = [
+            {
+                id: 'performance',
+                name: 'Performance Reports',
+                description: 'System performance and energy production',
+                icon: 'chart-line',
+                count: await Report.countDocuments({ type: { $in: ['daily', 'weekly', 'monthly'] } })
+            },
+            {
+                id: 'analysis',
+                name: 'Analysis Reports',
+                description: 'Data analysis and insights',
+                icon: 'chart-bar',
+                count: await Report.countDocuments({ tags: 'analysis' })
+            },
+            {
+                id: 'alerts',
+                name: 'Alert Reports',
+                description: 'Alert and incident summaries',
+                icon: 'exclamation-triangle',
+                count: await Report.countDocuments({ tags: 'alerts' })
+            },
+            {
+                id: 'maintenance',
+                name: 'Maintenance Reports',
+                description: 'System maintenance and health',
+                icon: 'tools',
+                count: await Report.countDocuments({ tags: 'maintenance' })
+            },
+            {
+                id: 'compliance',
+                name: 'Compliance Reports',
+                description: 'Regulatory and compliance reports',
+                icon: 'file-contract',
+                count: await Report.countDocuments({ tags: 'compliance' })
+            },
+            {
+                id: 'custom',
+                name: 'Custom Reports',
+                description: 'User-generated custom reports',
+                icon: 'edit',
+                count: await Report.countDocuments({ type: 'custom' })
+            }
+        ];
+        
+        res.json({
+            success: true,
+            categories
+        });
+        
+    } catch (error) {
+        console.error('Get report categories error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get report categories',
+            error: error.message
+        });
+    }
+}
+
+// Get report trends (API)
+static async getReportTrends(req, res) {
+    try {
+        const { days = 30 } = req.query;
+        
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - parseInt(days));
+        
+        // Get reports grouped by day
+        const reportsByDay = await Report.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                    },
+                    total: { $sum: 1 },
+                    pdf: {
+                        $sum: { $cond: [{ $eq: ['$format', 'pdf'] }, 1, 0] }
+                    },
+                    excel: {
+                        $sum: { $cond: [{ $eq: ['$format', 'excel'] }, 1, 0] }
+                    },
+                    csv: {
+                        $sum: { $cond: [{ $eq: ['$format', 'csv'] }, 1, 0] }
+                    },
+                    totalSize: { $sum: '$fileSize' },
+                    totalDownloads: { $sum: '$downloadCount' }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+        
+        // Calculate statistics
+        const totalReports = await Report.countDocuments({
+            createdAt: { $gte: startDate, $lte: endDate }
+        });
+        
+        const totalSize = await Report.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalSize: { $sum: '$fileSize' }
+                }
+            }
+        ]);
+        
+        const avgSize = totalReports > 0 ? 
+            (totalSize[0]?.totalSize || 0) / totalReports : 0;
+        
+        const mostDownloaded = await Report.find({
+            createdAt: { $gte: startDate, $lte: endDate }
+        })
+        .sort({ downloadCount: -1 })
+        .limit(5)
+        .select('title type format downloadCount createdAt');
+        
+        res.json({
+            success: true,
+            period: {
+                start: startDate,
+                end: endDate,
+                days: parseInt(days)
+            },
+            trends: {
+                daily: reportsByDay,
+                totalReports,
+                totalSize: totalSize[0]?.totalSize || 0,
+                avgSize: Math.round(avgSize),
+                mostDownloaded,
+                byFormat: {
+                    pdf: reportsByDay.reduce((sum, day) => sum + day.pdf, 0),
+                    excel: reportsByDay.reduce((sum, day) => sum + day.excel, 0),
+                    csv: reportsByDay.reduce((sum, day) => sum + day.csv, 0)
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Get report trends error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get report trends',
+            error: error.message
+        });
+    }
+}
+
+// Clone report (API)
+static async cloneReport(req, res) {
+    try {
+        const { id } = req.params;
+        const userId = req.session.user.id;
+        
+        const originalReport = await Report.findById(id);
+        
+        if (!originalReport) {
+            return res.status(404).json({
+                success: false,
+                message: 'Report not found'
+            });
+        }
+        
+        // Check permissions
+        if (!originalReport.isPublic && 
+            originalReport.generatedBy.toString() !== userId &&
+            !originalReport.sharedWith.includes(userId) &&
+            req.session.user.role !== USER_ROLES.ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied to this report'
+            });
+        }
+        
+        // Create cloned report
+        const clonedReport = new Report({
+            title: `Copy of ${originalReport.title}`,
+            type: originalReport.type,
+            period: originalReport.period,
+            generatedBy: userId,
+            filePath: originalReport.filePath,
+            fileName: `copy_${originalReport.fileName}`,
+            fileSize: originalReport.fileSize,
+            format: originalReport.format,
+            summary: originalReport.summary,
+            metadata: originalReport.metadata,
+            tags: [...(originalReport.tags || []), 'cloned'],
+            isPublic: false, // Cloned reports are private by default
+            sharedWith: []
+        });
+        
+        await clonedReport.save();
+        
+        res.json({
+            success: true,
+            message: 'Report cloned successfully',
+            data: {
+                reportId: clonedReport._id,
+                title: clonedReport.title,
+                downloadUrl: `/api/reports/download/${clonedReport._id}`
+            }
+        });
+        
+    } catch (error) {
+        console.error('Clone report error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to clone report',
+            error: error.message
+        });
+    }
+}
+
+// Schedule report generation (API)
+static async scheduleReport(req, res) {
+    try {
+        const {
+            templateId,
+            scheduleType,
+            scheduleTime,
+            recipients,
+            format = 'pdf',
+            includeCharts = true
+        } = req.body;
+        
+        const userId = req.session.user.id;
+        
+        // Validate schedule type
+        const validScheduleTypes = ['daily', 'weekly', 'monthly', 'custom'];
+        if (!validScheduleTypes.includes(scheduleType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid schedule type'
+            });
+        }
+        
+        // Create schedule record (in a real implementation, you'd have a Schedule model)
+        const schedule = {
+            templateId,
+            scheduleType,
+            scheduleTime,
+            recipients: recipients || [],
+            format,
+            includeCharts,
+            createdBy: userId,
+            isActive: true,
+            nextRun: calculateNextRun(scheduleType, scheduleTime),
+            lastRun: null
+        };
+        
+        // In a real implementation, you'd save this to a database
+        // For now, return success
+        res.json({
+            success: true,
+            message: `Report scheduled for ${scheduleType} delivery`,
+            schedule: {
+                id: `schedule_${Date.now()}`,
+                ...schedule
+            }
+        });
+        
+    } catch (error) {
+        console.error('Schedule report error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to schedule report',
+            error: error.message
+        });
+    }
+}
+
+
+
+// Get scheduled reports (API)
+static async getScheduledReports(req, res) {
+    try {
+        // In a real implementation, you'd fetch from a Schedule model
+        // For now, return mock data
+        const scheduledReports = [
+            {
+                id: 'schedule_1',
+                name: 'Daily Performance Report',
+                scheduleType: 'daily',
+                nextRun: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                lastRun: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                recipients: ['admin@example.com', 'tech@example.com'],
+                format: 'pdf',
+                isActive: true
+            },
+            {
+                id: 'schedule_2',
+                name: 'Weekly Summary Report',
+                scheduleType: 'weekly',
+                nextRun: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                lastRun: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                recipients: ['manager@example.com'],
+                format: 'excel',
+                isActive: true
+            },
+            {
+                id: 'schedule_3',
+                name: 'Monthly Analysis',
+                scheduleType: 'monthly',
+                nextRun: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                lastRun: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                recipients: ['director@example.com', 'finance@example.com'],
+                format: 'pdf',
+                isActive: true
+            }
+        ];
+        
+        res.json({
+            success: true,
+            scheduledReports
+        });
+        
+    } catch (error) {
+        console.error('Get scheduled reports error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get scheduled reports',
+            error: error.message
+        });
+    }
+}
+}
+
+// Helper function to calculate next run time
+function calculateNextRun(scheduleType, scheduleTime) {
+    const now = new Date();
+    const nextRun = new Date();
+    
+    switch (scheduleType) {
+        case 'daily':
+            nextRun.setDate(now.getDate() + 1);
+            break;
+        case 'weekly':
+            nextRun.setDate(now.getDate() + 7);
+            break;
+        case 'monthly':
+            nextRun.setMonth(now.getMonth() + 1);
+            break;
+        case 'custom':
+            // Parse custom schedule time
+            if (scheduleTime) {
+                return new Date(scheduleTime);
+            }
+            break;
+    }
+    
+    // Set time to 8:00 AM by default
+    nextRun.setHours(8, 0, 0, 0);
+    return nextRun;
 }
 
 module.exports = ReportController;

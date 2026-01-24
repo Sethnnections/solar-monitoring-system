@@ -601,6 +601,357 @@ class UserController {
             });
         }
     }
+
+    // Get user statistics (enhanced)
+    static async getUserStatistics(req, res) {
+        try {
+            // Check if user is admin
+            if (req.session.user.role !== USER_ROLES.ADMIN) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. Admin privileges required.'
+                });
+            }
+            
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const stats = {
+                total: await User.countDocuments(),
+                byRole: {
+                    admin: await User.countDocuments({ role: USER_ROLES.ADMIN }),
+                    technician: await User.countDocuments({ role: USER_ROLES.TECHNICIAN }),
+                    viewer: await User.countDocuments({ role: USER_ROLES.VIEWER })
+                },
+                byStatus: {
+                    active: await User.countDocuments({ isActive: true }),
+                    inactive: await User.countDocuments({ isActive: false }),
+                    locked: await User.countDocuments({ lockUntil: { $gt: new Date() } })
+                },
+                recent: {
+                    last24Hours: await User.countDocuments({
+                        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+                    }),
+                    last7Days: await User.countDocuments({
+                        createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+                    }),
+                    last30Days: await User.countDocuments({
+                        createdAt: { $gte: thirtyDaysAgo }
+                    })
+                },
+                activity: {
+                    online: await User.countDocuments({
+                        lastActivity: { $gte: new Date(Date.now() - 15 * 60 * 1000) }
+                    }),
+                    today: await User.countDocuments({
+                        lastLogin: { $gte: new Date().setHours(0, 0, 0, 0) }
+                    }),
+                    week: await User.countDocuments({
+                        lastLogin: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+                    })
+                }
+            };
+            
+            res.json({
+                success: true,
+                statistics: stats
+            });
+            
+        } catch (error) {
+            console.error('Get user statistics error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to get user statistics',
+                error: error.message
+            });
+        }
+    }
+
+    // Get user activity log
+    static async getUserActivityLog(req, res) {
+        try {
+            const { id } = req.params;
+            const { limit = 50, page = 1 } = req.query;
+            
+            // Check permissions
+            if (req.session.user.role !== USER_ROLES.ADMIN && 
+                req.session.user.id !== id) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied'
+                });
+            }
+            
+            // In a real app, you'd have an ActivityLog model
+            // For now, return basic user activity
+            const user = await User.findById(id).select('lastLogin loginAttempts createdAt updatedAt');
+            
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+            
+            const activity = {
+                lastLogin: user.lastLogin,
+                loginAttempts: user.loginAttempts,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+                memberSince: Helpers.formatDate(user.createdAt),
+                lastActivity: user.lastActivity || user.updatedAt
+            };
+            
+            res.json({
+                success: true,
+                data: activity
+            });
+            
+        } catch (error) {
+            console.error('Get user activity log error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to get user activity log',
+                error: error.message
+            });
+        }
+    }
+
+    // Update user preferences
+    static async updateUserPreferences(req, res) {
+        try {
+            const { id } = req.params;
+            const { preferences } = req.body;
+            
+            // Check permissions
+            if (req.session.user.role !== USER_ROLES.ADMIN && 
+                req.session.user.id !== id) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied'
+                });
+            }
+            
+            const user = await User.findById(id);
+            
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+            
+            // Update preferences
+            if (preferences) {
+                user.preferences = {
+                    ...user.preferences,
+                    ...preferences
+                };
+            }
+            
+            await user.save();
+            
+            res.json({
+                success: true,
+                message: 'Preferences updated successfully',
+                data: user.preferences
+            });
+            
+        } catch (error) {
+            console.error('Update user preferences error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update user preferences',
+                error: error.message
+            });
+        }
+    }
+
+    // Bulk update users
+    static async bulkUpdateUsers(req, res) {
+        try {
+            // Check if user is admin
+            if (req.session.user.role !== USER_ROLES.ADMIN) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. Admin privileges required.'
+                });
+            }
+            
+            const { ids, action, data } = req.body;
+            
+            if (!ids || !Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Please provide user IDs'
+                });
+            }
+            
+            if (!action) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Please provide action'
+                });
+            }
+            
+            let updateQuery = {};
+            let message = '';
+            
+            switch (action) {
+                case 'activate':
+                    updateQuery = { isActive: true };
+                    message = 'activate';
+                    break;
+                    
+                case 'deactivate':
+                    updateQuery = { isActive: false };
+                    message = 'deactivate';
+                    break;
+                    
+                case 'changeRole':
+                    if (!data || !data.role || !Object.values(USER_ROLES).includes(data.role)) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Invalid role specified'
+                        });
+                    }
+                    updateQuery = { role: data.role };
+                    message = 'change role';
+                    break;
+                    
+                default:
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Invalid action'
+                    });
+            }
+            
+            const result = await User.updateMany(
+                { _id: { $in: ids } },
+                { $set: updateQuery }
+            );
+            
+            res.json({
+                success: true,
+                message: `${result.modifiedCount} users ${message}d successfully`,
+                modifiedCount: result.modifiedCount
+            });
+            
+        } catch (error) {
+            console.error('Bulk update users error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to bulk update users',
+                error: error.message
+            });
+        }
+    }
+
+    // Export users
+    static async exportUsers(req, res) {
+        try {
+            // Check if user is admin
+            if (req.session.user.role !== USER_ROLES.ADMIN) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. Admin privileges required.'
+                });
+            }
+            
+            const { format = 'csv' } = req.query;
+            
+            const users = await User.find()
+                .select('-password')
+                .sort({ createdAt: -1 });
+            
+            if (users.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No users found for export'
+                });
+            }
+            
+            // Format data based on requested format
+            let exportData;
+            let contentType;
+            let filename;
+            
+            switch (format.toLowerCase()) {
+                case 'csv':
+                    exportData = this.convertUsersToCSV(users);
+                    contentType = 'text/csv';
+                    filename = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+                    break;
+                    
+                case 'json':
+                    exportData = JSON.stringify(users, null, 2);
+                    contentType = 'application/json';
+                    filename = `users_export_${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                    
+                default:
+                    exportData = JSON.stringify(users, null, 2);
+                    contentType = 'application/json';
+                    filename = `users_export_${new Date().toISOString().split('T')[0]}.json`;
+            }
+            
+            // Set headers for download
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            
+            res.send(exportData);
+            
+        } catch (error) {
+            console.error('Export users error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to export users',
+                error: error.message
+            });
+        }
+    }
+
+    // Helper method to convert users to CSV
+    static convertUsersToCSV(users) {
+        const headers = [
+            'ID',
+            'Name',
+            'Email',
+            'Role',
+            'Phone',
+            'Department',
+            'Status',
+            'Active',
+            'Last Login',
+            'Created At',
+            'Email Verified',
+            'Login Attempts',
+            'Locked Until'
+        ];
+        
+        const rows = users.map(user => [
+            user._id.toString(),
+            `"${user.name.replace(/"/g, '""')}"`,
+            user.email,
+            user.role,
+            user.phone || '',
+            user.department || '',
+            user.isOnline ? 'Online' : 'Offline',
+            user.isActive ? 'Yes' : 'No',
+            user.lastLogin ? new Date(user.lastLogin).toISOString() : '',
+            new Date(user.createdAt).toISOString(),
+            user.emailVerified ? 'Yes' : 'No',
+            user.loginAttempts || 0,
+            user.lockUntil ? new Date(user.lockUntil).toISOString() : ''
+        ]);
+        
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+        
+        return csvContent;
+    }
 }
 
 module.exports = UserController;

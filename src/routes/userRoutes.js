@@ -91,4 +91,64 @@ router.get('/api/users/search',
     UserController.searchUsers
 );
 
+// Add these routes to userRoutes.js
+
+// User statistics
+router.get('/api/users/statistics', 
+    requireAdmin,
+    UserController.getUserStatistics
+);
+
+// User activity log
+router.get('/api/users/:id/activity-log',
+    [
+        idParamValidator,
+        queryValidators.limit,
+        queryValidators.page
+    ],
+    validate,
+    UserController.getUserActivityLog
+);
+
+// Update user preferences
+router.put('/api/users/:id/preferences',
+    [
+        idParamValidator,
+        validate
+    ],
+    UserController.updateUserPreferences
+);
+
+// Bulk update users
+router.post('/api/users/bulk-update',
+    requireAdmin,
+    UserController.bulkUpdateUsers
+);
+
+// Export users
+router.get('/api/users/export',
+    [
+        queryValidators.format
+    ],
+    validate,
+    requireAdmin,
+    UserController.exportUsers
+);
+
+// Get user sessions (if you implement session tracking)
+router.get('/api/users/:id/sessions',
+    [
+        idParamValidator,
+        validate
+    ],
+    requireAdmin,
+    async (req, res) => {
+        // Implementation for session tracking
+        res.json({
+            success: true,
+            message: 'Session tracking endpoint'
+        });
+    }
+);
+
 module.exports = router;

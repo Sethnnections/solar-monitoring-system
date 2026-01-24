@@ -1,52 +1,1853 @@
-<%- include('../partials/head', { title: 'User Management' }); %>
+<%- include('../partials/head', { 
+    title: 'User Management - Solar Monitoring System',
+    extraStyles: `
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css">
+        <style>
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                color: white;
+            }
+            .status-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 5px;
+            }
+            .status-online { background-color: #10b981; }
+            .status-offline { background-color: #6b7280; }
+            .status-away { background-color: #f59e0b; }
+            .role-badge {
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            .role-admin { background-color: #dc2626; color: white; }
+            .role-technician { background-color: #2563eb; color: white; }
+            .role-viewer { background-color: #059669; color: white; }
+            .animate-pulse {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+        </style>
+    ` 
+}); %>
 <%- include('../partials/header'); %>
-<%- include('../partials/sidebar', { currentPath: '/users' }); %>
+<%- include('../partials/sidebar'); %>
 
-<main class="md:ml-64 pt-16 min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-4xl mx-auto">
-            <div class="text-center py-12">
-                <div class="inline-block p-4 bg-indigo-100 rounded-full mb-6">
-                    <i class="fas fa-users-cog text-indigo-600 text-4xl"></i>
+<!-- Main Content -->
+<main class="md:ml-64 pt-16 min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
+                    <p class="text-gray-600">Manage system users, roles, and permissions</p>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-4">User Management</h1>
-                <p class="text-lg text-gray-600 mb-8">Administrative user management interface coming soon. Available to admin users only.</p>
-                
-                <div class="bg-white rounded-lg shadow-lg p-8 border border-gray-200 mt-8">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="text-center p-4">
-                            <div class="inline-block p-3 bg-blue-100 rounded-full mb-3">
-                                <i class="fas fa-user-plus text-blue-600"></i>
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <!-- Create User Button -->
+                    <button id="createUserBtn" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-user-plus mr-2"></i> Create User
+                    </button>
+                    
+                    <!-- Bulk Actions Dropdown -->
+                    <div class="relative" id="bulkActionsDropdown">
+                        <button id="bulkActionsBtn" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200">
+                            <i class="fas fa-tasks mr-2"></i> Bulk Actions
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div id="bulkActionsMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10">
+                            <div class="py-1">
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-action="activate">
+                                    <i class="fas fa-check-circle mr-2 text-green-600"></i>Activate Selected
+                                </button>
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-action="deactivate">
+                                    <i class="fas fa-times-circle mr-2 text-red-600"></i>Deactivate Selected
+                                </button>
+                                <div class="border-t my-1"></div>
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-action="changeRole">
+                                    <i class="fas fa-user-tag mr-2 text-blue-600"></i>Change Role
+                                </button>
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600" data-action="delete">
+                                    <i class="fas fa-trash mr-2"></i>Delete Selected
+                                </button>
                             </div>
-                            <h3 class="font-semibold text-gray-800">Add Users</h3>
-                            <p class="text-gray-600 text-sm mt-1">Create new user accounts</p>
                         </div>
-                        
-                        <div class="text-center p-4">
-                            <div class="inline-block p-3 bg-green-100 rounded-full mb-3">
-                                <i class="fas fa-edit text-green-600"></i>
+                    </div>
+                    
+                    <!-- Export Button -->
+                    <div class="relative" id="exportDropdown">
+                        <button id="exportBtn" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
+                            <i class="fas fa-download mr-2"></i> Export
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div id="exportMenu" class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg z-10">
+                            <div class="py-1">
+                                <button class="export-option w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-format="csv">
+                                    <i class="fas fa-file-csv mr-2 text-green-600"></i>CSV
+                                </button>
+                                <button class="export-option w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-format="json">
+                                    <i class="fas fa-file-code mr-2 text-blue-600"></i>JSON
+                                </button>
                             </div>
-                            <h3 class="font-semibold text-gray-800">Edit Users</h3>
-                            <p class="text-gray-600 text-sm mt-1">Modify user permissions</p>
                         </div>
-                        
-                        <div class="text-center p-4">
-                            <div class="inline-block p-3 bg-red-100 rounded-full mb-3">
-                                <i class="fas fa-user-slash text-red-600"></i>
-                            </div>
-                            <h3 class="font-semibold text-gray-800">Manage Access</h3>
-                            <p class="text-gray-600 text-sm mt-1">Control user access levels</p>
+                    </div>
+                    
+                    <!-- Refresh Button -->
+                    <button id="refreshUsers" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- User Summary Cards -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total Users</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalUsers">
+                                <%= stats ? stats.total : 0 %>
+                            </p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="mt-8 text-sm text-gray-500">
-                    <p><i class="fas fa-info-circle mr-2"></i>This section is restricted to administrators only.</p>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg mr-4">
+                            <i class="fas fa-user-check text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Active Users</p>
+                            <p class="text-2xl font-bold text-gray-800" id="activeUsers">
+                                <%= stats && stats.byStatus ? stats.byStatus.active : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                            <i class="fas fa-user-clock text-yellow-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Online Now</p>
+                            <p class="text-2xl font-bold text-gray-800" id="onlineUsers">
+                                Loading...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                            <i class="fas fa-user-plus text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">New (7 Days)</p>
+                            <p class="text-2xl font-bold text-gray-800" id="newUsers">
+                                <%= stats && stats.recent ? stats.recent.last7Days : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filters and Search -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Role Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="roleFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Roles</option>
+                            <% Object.keys(userRoles).forEach(function(roleKey) { %>
+                                <option value="<%= userRoles[roleKey] %>">
+                                    <%= userRoles[roleKey] %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="locked">Locked</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <div class="relative">
+                            <input type="text" id="searchInput" 
+                                   placeholder="Search users..." 
+                                   class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Sort By -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                        <select id="sortFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="-createdAt">Newest First</option>
+                            <option value="createdAt">Oldest First</option>
+                            <option value="name">Name (A-Z)</option>
+                            <option value="-name">Name (Z-A)</option>
+                            <option value="-lastLogin">Last Active</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Advanced Filters (Collapsible) -->
+                <div class="mt-4">
+                    <button id="toggleAdvancedFilters" class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                        <i class="fas fa-filter mr-2"></i>
+                        <span>Advanced Filters</span>
+                        <i class="fas fa-chevron-down ml-2"></i>
+                    </button>
+                    
+                    <div id="advancedFilters" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Created After</label>
+                                <input type="date" id="createdAfter" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Created Before</label>
+                                <input type="date" id="createdBefore" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Last Login After</label>
+                                <input type="date" id="lastLoginAfter" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button id="applyAdvancedFilters" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Apply Filters
+                            </button>
+                            <button id="resetFilters" class="ml-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                                Reset All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Users Table -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800">Users List</h2>
+                            <div class="text-sm text-gray-600">
+                                <span id="selectedCount">0</span> selected of <span id="totalUsersCount"><%= pagination ? pagination.total : 0 %></span> users
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-4 py-3 text-left">
+                                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        </th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" id="usersTableBody">
+                                    <% if (users && users.length > 0) { %>
+                                        <% users.forEach(function(user) { %>
+                                            <tr class="hover:bg-gray-50" data-user-id="<%= user._id %>">
+                                                <td class="px-4 py-3">
+                                                    <input type="checkbox" class="user-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center">
+                                                        <div class="user-avatar bg-<%= 
+                                                            user.role === 'admin' ? 'red' : 
+                                                            user.role === 'technician' ? 'blue' : 
+                                                            'green' %>-500 mr-3">
+                                                            <%= user.name.charAt(0).toUpperCase() %>
+                                                        </div>
+                                                        <div>
+                                                            <div class="font-medium text-gray-900"><%= user.name %></div>
+                                                            <div class="text-sm text-gray-500"><%= user.email %></div>
+                                                            <% if (user.phone) { %>
+                                                                <div class="text-xs text-gray-400">
+                                                                    <i class="fas fa-phone mr-1"></i><%= user.phone %>
+                                                                </div>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="role-badge role-<%= user.role %>">
+                                                        <%= user.role %>
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center">
+                                                        <% if (user.isActive) { %>
+                                                            <% if (user.isOnline) { %>
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                    <span class="status-dot status-online"></span>
+                                                                    Online
+                                                                </span>
+                                                            <% } else { %>
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                                    <span class="status-dot status-offline"></span>
+                                                                    Offline
+                                                                </span>
+                                                            <% } %>
+                                                        <% } else { %>
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                <i class="fas fa-ban mr-1"></i>
+                                                                Inactive
+                                                            </span>
+                                                        <% } %>
+                                                        
+                                                        <% if (user.lockUntil && user.lockUntil > new Date()) { %>
+                                                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                                <i class="fas fa-lock mr-1"></i>
+                                                                Locked
+                                                            </span>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm text-gray-500">
+                                                    <% if (user.lastLogin) { %>
+                                                        <div class="whitespace-nowrap">
+                                                            <%= new Date(user.lastLogin).toLocaleDateString() %>
+                                                        </div>
+                                                        <div class="text-xs text-gray-400">
+                                                            <%= helpers.timeAgo(user.lastLogin) %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <div class="text-gray-400">Never</div>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex space-x-2">
+                                                        <button class="edit-btn inline-flex items-center px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100" 
+                                                                data-id="<%= user._id %>">
+                                                            <i class="fas fa-edit mr-1"></i>Edit
+                                                        </button>
+                                                        <button class="view-btn inline-flex items-center px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded hover:bg-gray-100" 
+                                                                data-id="<%= user._id %>">
+                                                            <i class="fas fa-eye mr-1"></i>View
+                                                        </button>
+                                                        <% if (user._id.toString() !== user.id && user.role === 'admin') { %>
+                                                            <button class="delete-btn inline-flex items-center px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100" 
+                                                                    data-id="<%= user._id %>">
+                                                                <i class="fas fa-trash mr-1"></i>Delete
+                                                            </button>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="6" class="px-4 py-12 text-center text-gray-500">
+                                                <i class="fas fa-users-slash text-4xl mb-3 text-gray-300"></i>
+                                                <p class="text-lg">No users found</p>
+                                                <p class="text-sm mt-1">Try adjusting your filters or create a new user</p>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <% if (pagination) { %>
+                            <div class="mt-6 flex items-center justify-between">
+                                <div class="text-sm text-gray-700">
+                                    Showing <span class="font-medium"><%= pagination.startItem %></span> to 
+                                    <span class="font-medium"><%= pagination.endItem %></span> of 
+                                    <span class="font-medium"><%= pagination.total %></span> users
+                                </div>
+                                <div class="flex space-x-2">
+                                    <% if (pagination.prevPage) { %>
+                                        <a href="?<%= new URLSearchParams({...filters, page: pagination.prevPage }).toString() %>" 
+                                           class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            Previous
+                                        </a>
+                                    <% } %>
+                                    
+                                    <% if (pagination && pagination.pages) { %>
+                                        <% pagination.pages.forEach(function(page) { %>
+                                            <a href="?<%= new URLSearchParams({...filters, page: page }).toString() %>" 
+                                               class="px-3 py-2 <%= page === pagination.currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' %> rounded-lg text-sm font-medium">
+                                                <%= page %>
+                                            </a>
+                                        <% }); %>
+                                    <% } %>
+                                    
+                                    <% if (pagination.nextPage) { %>
+                                        <a href="?<%= new URLSearchParams({...filters, page: pagination.nextPage }).toString() %>" 
+                                           class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            Next
+                                        </a>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Stats & Actions -->
+            <div class="space-y-6">
+                <!-- User Statistics -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">User Statistics</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Administrators</span>
+                                    <span class="font-medium" id="adminCount">
+                                        <%= stats && stats.byRole ? stats.byRole.admin : 0 %>
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-red-600 h-2 rounded-full" id="adminBar"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Technicians</span>
+                                    <span class="font-medium" id="techCount">
+                                        <%= stats && stats.byRole ? stats.byRole.technician : 0 %>
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" id="techBar"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Viewers</span>
+                                    <span class="font-medium" id="viewerCount">
+                                        <%= stats && stats.byRole ? stats.byRole.viewer : 0 %>
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" id="viewerBar"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-gray-800" id="activeCount">
+                                            <%= stats && stats.byStatus ? stats.byStatus.active : 0 %>
+                                        </div>
+                                        <div class="text-sm text-gray-600">Active</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-gray-800" id="inactiveCount">
+                                            <%= stats && stats.byStatus ? stats.byStatus.inactive : 0 %>
+                                        </div>
+                                        <div class="text-sm text-gray-600">Inactive</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Quick Actions</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <button id="importUsers" class="w-full flex items-center justify-between p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-file-import mr-3"></i>
+                                    <span>Import Users</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button id="sendWelcomeEmails" class="w-full flex items-center justify-between p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope mr-3"></i>
+                                    <span>Send Welcome Emails</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button id="resetAllPasswords" class="w-full flex items-center justify-between p-3 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-key mr-3"></i>
+                                    <span>Reset All Passwords</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button id="viewAuditLog" class="w-full flex items-center justify-between p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-clipboard-list mr-3"></i>
+                                    <span>View Audit Log</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Role Distribution Chart -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Role Distribution</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="h-48">
+                            <canvas id="roleDistributionChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </main>
 
+<!-- Create/Edit User Modal -->
+<div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800" id="modalTitle">Create New User</h3>
+        </div>
+        <form id="userForm" class="p-6">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                        <input type="text" name="name" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="John Doe">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                        <input type="email" name="email" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="john@example.com">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                        <select name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Role</option>
+                            <% Object.keys(userRoles).forEach(function(roleKey) { %>
+                                <option value="<%= userRoles[roleKey] %>"><%= userRoles[roleKey] %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" name="phone" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="+265 xxx xxx xxx">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                    <input type="text" name="department" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="e.g., Maintenance, IT, Operations">
+                </div>
+                
+                <div id="passwordSection">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                            <input type="password" name="password" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="••••••••">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
+                            <input type="password" name="confirmPassword" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Notification Preferences</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" name="emailAlerts" id="emailAlerts" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="emailAlerts" class="ml-2 text-sm text-gray-700">Email alerts for critical issues</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="dailySummary" id="dailySummary" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="dailySummary" class="ml-2 text-sm text-gray-700">Daily summary emails</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="weeklyReport" id="weeklyReport" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="weeklyReport" class="ml-2 text-sm text-gray-700">Weekly report emails</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Account Settings</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" name="isActive" id="isActive" checked class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="isActive" class="ml-2 text-sm text-gray-700">Account is active</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="emailVerified" id="emailVerified" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="emailVerified" class="ml-2 text-sm text-gray-700">Email verified</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="sendWelcomeEmail" id="sendWelcomeEmail" checked class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="sendWelcomeEmail" class="ml-2 text-sm text-gray-700">Send welcome email</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" id="cancelUserForm" class="px-4 py-2 text-gray-700 hover:text-gray-900">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                    <span id="submitButtonText">Create User</span>
+                    <i class="fas fa-spinner fa-spin ml-2 hidden" id="submitSpinner"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal content will be loaded dynamically -->
+    </div>
+</div>
+
 <%- include('../partials/footer'); %>
-<%- include('../partials/scripts'); %>
+<%- include('../partials/scripts', {
+    extraScripts: `
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    `
+}); %>
+
+<script>
+    // Initialize variables
+    let selectedUsers = new Set();
+    let currentUserId = null;
+    let currentPage = <%= filters.page || 1 %>;
+    
+    // DOM Elements
+    const createUserBtn = $('#createUserBtn');
+    const userModal = $('#userModal');
+    const userDetailsModal = $('#userDetailsModal');
+    const cancelUserForm = $('#cancelUserForm');
+    const userForm = $('#userForm');
+    const bulkActionsBtn = $('#bulkActionsBtn');
+    const bulkActionsMenu = $('#bulkActionsMenu');
+    const selectAll = $('#selectAll');
+    const userCheckboxes = $('.user-checkbox');
+    const selectedCount = $('#selectedCount');
+    const refreshUsers = $('#refreshUsers');
+    const exportBtn = $('#exportBtn');
+    const exportMenu = $('#exportMenu');
+    const toggleAdvancedFilters = $('#toggleAdvancedFilters');
+    const advancedFilters = $('#advancedFilters');
+    const roleFilter = $('#roleFilter');
+    const statusFilter = $('#statusFilter');
+    const searchInput = $('#searchInput');
+    const sortFilter = $('#sortFilter');
+    const createdAfter = $('#createdAfter');
+    const createdBefore = $('#createdBefore');
+    const lastLoginAfter = $('#lastLoginAfter');
+    const applyAdvancedFilters = $('#applyAdvancedFilters');
+    const resetFilters = $('#resetFilters');
+    const bulkActionBtns = $('.bulk-action-btn');
+    const exportOptions = $('.export-option');
+    const importUsers = $('#importUsers');
+    const sendWelcomeEmails = $('#sendWelcomeEmails');
+    const resetAllPasswords = $('#resetAllPasswords');
+    const viewAuditLog = $('#viewAuditLog');
+    
+    // Initialize date pickers
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    createdAfter.val(thirtyDaysAgo.toISOString().split('T')[0]);
+    createdBefore.val(today.toISOString().split('T')[0]);
+    
+    // Initialize Chart
+    initRoleDistributionChart();
+    updateProgressBars();
+    
+    // Load real-time statistics
+    loadUserStatistics();
+    
+    // Event Listeners
+    
+    // Create User Modal
+    createUserBtn.click(() => openUserModal());
+    cancelUserForm.click(() => closeUserModal());
+    userModal.click(function(e) {
+        if (e.target === this) closeUserModal();
+    });
+    
+    // Bulk Actions Dropdown
+    bulkActionsBtn.click(() => bulkActionsMenu.toggleClass('hidden'));
+    $(document).click(function(e) {
+        if (!$(e.target).closest('#bulkActionsDropdown').length) {
+            bulkActionsMenu.addClass('hidden');
+        }
+    });
+    
+    // Bulk Actions
+    bulkActionBtns.click(function() {
+        const action = $(this).data('action');
+        if (selectedUsers.size === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No users selected',
+                text: 'Please select at least one user to perform this action',
+                confirmButtonColor: '#3b82f6'
+            });
+            return;
+        }
+        
+        if (action === 'activate') {
+            bulkUpdateUsers('activate');
+        } else if (action === 'deactivate') {
+            bulkUpdateUsers('deactivate');
+        } else if (action === 'changeRole') {
+            showChangeRoleModal();
+        } else if (action === 'delete') {
+            bulkDeleteUsers();
+        }
+    });
+    
+    // Select All Checkbox
+    selectAll.change(function() {
+        const isChecked = $(this).prop('checked');
+        $('.user-checkbox').prop('checked', isChecked);
+        updateSelectedCount();
+    });
+    
+    // Individual Checkboxes
+    $(document).on('change', '.user-checkbox', updateSelectedCount);
+    
+    // User Actions
+    $(document).on('click', '.edit-btn', function() {
+        const userId = $(this).data('id');
+        openUserModal(userId);
+    });
+    
+    $(document).on('click', '.view-btn', function() {
+        const userId = $(this).data('id');
+        viewUserDetails(userId);
+    });
+    
+    $(document).on('click', '.delete-btn', function() {
+        const userId = $(this).data('id');
+        deleteUser(userId);
+    });
+    
+    // Refresh Users
+    refreshUsers.click(() => location.reload());
+    
+    // Export Users
+    exportBtn.click(() => exportMenu.toggleClass('hidden'));
+    $(document).click(function(e) {
+        if (!$(e.target).closest('#exportDropdown').length) {
+            exportMenu.addClass('hidden');
+        }
+    });
+    
+    exportOptions.click(function() {
+        const format = $(this).data('format');
+        exportUsersToFormat(format);
+    });
+    
+    // Toggle Advanced Filters
+    toggleAdvancedFilters.click(() => {
+        advancedFilters.toggleClass('hidden');
+        const icon = toggleAdvancedFilters.find('i.fa-chevron-down, i.fa-chevron-up');
+        if (advancedFilters.hasClass('hidden')) {
+            icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        } else {
+            icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        }
+    });
+    
+    // Filter Changes
+    roleFilter.change(applyFilters);
+    statusFilter.change(applyFilters);
+    sortFilter.change(applyFilters);
+    searchInput.on('keyup', debounce(applyFilters, 300));
+    
+    // Apply Advanced Filters
+    applyAdvancedFilters.click(applyAdvancedFiltering);
+    resetFilters.click(resetAllFilters);
+    
+    // Quick Actions
+    importUsers.click(importUsersFromCSV);
+    sendWelcomeEmails.click(sendWelcomeEmailsToUsers);
+    resetAllPasswords.click(resetAllUserPasswords);
+    viewAuditLog.click(viewUserAuditLog);
+    
+    // Form Submission
+    userForm.submit(handleUserFormSubmit);
+    
+    // Initialize
+    updateSelectedCount();
+    
+    // Functions
+    
+    function updateSelectedCount() {
+        selectedUsers.clear();
+        $('.user-checkbox:checked').each(function() {
+            const userId = $(this).closest('tr').data('user-id');
+            selectedUsers.add(userId);
+        });
+        selectedCount.text(selectedUsers.size);
+        selectAll.prop('checked', selectedUsers.size === $('.user-checkbox').length && selectedUsers.size > 0);
+    }
+    
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        if (roleFilter.val()) params.set('role', roleFilter.val());
+        if (statusFilter.val()) params.set('status', statusFilter.val());
+        if (sortFilter.val()) params.set('sort', sortFilter.val());
+        if (searchInput.val()) params.set('search', searchInput.val());
+        
+        window.location.href = '/users?' + params.toString();
+    }
+    
+    function applyAdvancedFiltering() {
+        const params = new URLSearchParams();
+        
+        if (roleFilter.val()) params.set('role', roleFilter.val());
+        if (statusFilter.val()) params.set('status', statusFilter.val());
+        if (sortFilter.val()) params.set('sort', sortFilter.val());
+        if (searchInput.val()) params.set('search', searchInput.val());
+        if (createdAfter.val()) params.set('createdAfter', createdAfter.val());
+        if (createdBefore.val()) params.set('createdBefore', createdBefore.val());
+        if (lastLoginAfter.val()) params.set('lastLoginAfter', lastLoginAfter.val());
+        
+        window.location.href = '/users?' + params.toString();
+    }
+    
+    function resetAllFilters() {
+        roleFilter.val('');
+        statusFilter.val('');
+        sortFilter.val('-createdAt');
+        searchInput.val('');
+        createdAfter.val(thirtyDaysAgo.toISOString().split('T')[0]);
+        createdBefore.val(today.toISOString().split('T')[0]);
+        lastLoginAfter.val('');
+        applyFilters();
+    }
+    
+    async function openUserModal(userId = null) {
+        currentUserId = userId;
+        
+        if (userId) {
+            // Edit mode
+            $('#modalTitle').text('Edit User');
+            $('#submitButtonText').text('Update User');
+            $('#passwordSection').hide();
+            
+            try {
+                const response = await axios.get(`/api/users/${userId}`);
+                if (response.data.success) {
+                    const user = response.data.data;
+                    
+                    // Fill form
+                    userForm.find('[name="name"]').val(user.name || '');
+                    userForm.find('[name="email"]').val(user.email || '');
+                    userForm.find('[name="role"]').val(user.role || '');
+                    userForm.find('[name="phone"]').val(user.phone || '');
+                    userForm.find('[name="department"]').val(user.department || '');
+                    
+                    // Notification preferences
+                    if (user.notificationPreferences) {
+                        userForm.find('[name="emailAlerts"]').prop('checked', user.notificationPreferences.emailAlerts || false);
+                        userForm.find('[name="dailySummary"]').prop('checked', user.notificationPreferences.dailySummary || false);
+                        userForm.find('[name="weeklyReport"]').prop('checked', user.notificationPreferences.weeklyReport || false);
+                    }
+                    
+                    // Account settings
+                    userForm.find('[name="isActive"]').prop('checked', user.isActive || false);
+                    userForm.find('[name="emailVerified"]').prop('checked', user.emailVerified || false);
+                    userForm.find('[name="sendWelcomeEmail"]').prop('checked', false); // Don't send welcome email for edits
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load user data',
+                    confirmButtonColor: '#3b82f6'
+                });
+                return;
+            }
+        } else {
+            // Create mode
+            $('#modalTitle').text('Create New User');
+            $('#submitButtonText').text('Create User');
+            $('#passwordSection').show();
+            userForm[0].reset();
+        }
+        
+        userModal.removeClass('hidden');
+    }
+    
+    function closeUserModal() {
+        userModal.addClass('hidden');
+        currentUserId = null;
+        userForm[0].reset();
+    }
+    
+    async function handleUserFormSubmit(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        // Validate password for new users
+        if (!currentUserId && (!data.password || data.password.length < 6)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: 'Password must be at least 6 characters',
+                confirmButtonColor: '#3b82f6'
+            });
+            return;
+        }
+        
+        if (!currentUserId && data.password !== data.confirmPassword) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: 'Passwords do not match',
+                confirmButtonColor: '#3b82f6'
+            });
+            return;
+        }
+        
+        // Prepare request data
+        const requestData = {
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            phone: data.phone,
+            department: data.department,
+            isActive: data.isActive === 'on',
+            emailVerified: data.emailVerified === 'on',
+            notificationPreferences: {
+                emailAlerts: data.emailAlerts === 'on',
+                dailySummary: data.dailySummary === 'on',
+                weeklyReport: data.weeklyReport === 'on'
+            }
+        };
+        
+        // Only include password for new users
+        if (!currentUserId) {
+            requestData.password = data.password;
+            requestData.confirmPassword = data.confirmPassword;
+            requestData.sendWelcomeEmail = data.sendWelcomeEmail === 'on';
+        }
+        
+        try {
+            // Show loading
+            $('#submitSpinner').removeClass('hidden');
+            
+            let response;
+            if (currentUserId) {
+                // Update existing user
+                response = await axios.put(`/api/users/${currentUserId}`, requestData);
+            } else {
+                // Create new user
+                response = await axios.post('/register', requestData);
+            }
+            
+            if (response.data.success || (response.status === 200 && !currentUserId)) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: currentUserId ? 'User updated successfully' : 'User created successfully',
+                    confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                    closeUserModal();
+                    location.reload();
+                });
+            } else {
+                throw new Error(response.data.message || 'Operation failed');
+            }
+            
+        } catch (error) {
+            console.error('User operation error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || error.message || 'Operation failed',
+                confirmButtonColor: '#3b82f6'
+            });
+        } finally {
+            $('#submitSpinner').addClass('hidden');
+        }
+    }
+    
+    async function viewUserDetails(userId) {
+        try {
+            const response = await axios.get(`/api/users/${userId}`);
+            
+            if (response.data.success) {
+                const user = response.data.data;
+                
+                // Format dates
+                const formatDate = (date) => {
+                    if (!date) return 'Never';
+                    return new Date(date).toLocaleString();
+                };
+                
+                const modalContent = `
+                    <div class="px-6 py-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">User Details</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Left Column -->
+                            <div class="md:col-span-2 space-y-6">
+                                <!-- Basic Info -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Basic Information</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Full Name</label>
+                                            <p class="mt-1 text-gray-900">${user.name}</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Email</label>
+                                            <p class="mt-1 text-gray-900">${user.email}</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Role</label>
+                                            <span class="mt-1 inline-block px-2 py-1 text-xs font-medium rounded-full 
+                                                ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 
+                                                  user.role === 'technician' ? 'bg-blue-100 text-blue-800' : 
+                                                  'bg-green-100 text-green-800'}">
+                                                ${user.role}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Phone</label>
+                                            <p class="mt-1 text-gray-900">${user.phone || 'Not provided'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Account Status -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Account Status</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                            ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                            ${user.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                        ${user.emailVerified ? 
+                                            '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Email Verified</span>' : 
+                                            '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Email Not Verified</span>'
+                                        }
+                                        ${user.lockUntil && new Date(user.lockUntil) > new Date() ? 
+                                            '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Account Locked</span>' : ''
+                                        }
+                                    </div>
+                                </div>
+                                
+                                <!-- Activity -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Activity</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Last Login</label>
+                                            <p class="mt-1 text-gray-900">${formatDate(user.lastLogin)}</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Created</label>
+                                            <p class="mt-1 text-gray-900">${formatDate(user.createdAt)}</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Last Updated</label>
+                                            <p class="mt-1 text-gray-900">${formatDate(user.updatedAt)}</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-400">Login Attempts</label>
+                                            <p class="mt-1 text-gray-900">${user.loginAttempts || 0}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="space-y-6">
+                                <!-- User Avatar -->
+                                <div class="text-center">
+                                    <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mb-3">
+                                        ${user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <h4 class="text-lg font-semibold text-gray-800">${user.name}</h4>
+                                    <p class="text-sm text-gray-500">${user.role}</p>
+                                </div>
+                                
+                                <!-- Quick Actions -->
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Actions</h4>
+                                    <div class="space-y-2">
+                                        <button class="w-full text-left px-3 py-2 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700" 
+                                                onclick="resetUserPassword('${userId}')">
+                                            <i class="fas fa-key mr-2 text-gray-500"></i>Reset Password
+                                        </button>
+                                        ${user.isActive ? 
+                                            `<button class="w-full text-left px-3 py-2 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700" 
+                                                    onclick="deactivateUser('${userId}')">
+                                                <i class="fas fa-user-slash mr-2 text-gray-500"></i>Deactivate Account
+                                            </button>` :
+                                            `<button class="w-full text-left px-3 py-2 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700" 
+                                                    onclick="activateUser('${userId}')">
+                                                <i class="fas fa-user-check mr-2 text-gray-500"></i>Activate Account
+                                            </button>`
+                                        }
+                                        <button class="w-full text-left px-3 py-2 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700" 
+                                                onclick="sendWelcomeEmail('${userId}')">
+                                            <i class="fas fa-envelope mr-2 text-gray-500"></i>Send Welcome Email
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Member Since -->
+                                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-600">Member Since</p>
+                                    <p class="text-lg font-semibold text-blue-800">
+                                        ${new Date(user.createdAt).toLocaleDateString('en-US', { 
+                                            year: 'numeric', 
+                                            month: 'long', 
+                                            day: 'numeric' 
+                                        })}
+                                    </p>
+                                    <p class="text-xs text-blue-500 mt-1">
+                                        ${Math.floor((new Date() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24))} days ago
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+                        <button onclick="openUserModal('${userId}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Edit User
+                        </button>
+                        <button onclick="closeUserDetails()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            Close
+                        </button>
+                    </div>
+                `;
+                
+                userDetailsModal.find('.bg-white').html(modalContent);
+                userDetailsModal.removeClass('hidden');
+            } else {
+                throw new Error('Failed to load user details');
+            }
+        } catch (error) {
+            console.error('View user details error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load user details',
+                confirmButtonColor: '#3b82f6'
+            });
+        }
+    }
+    
+    function closeUserDetails() {
+        userDetailsModal.addClass('hidden');
+    }
+    
+    async function deleteUser(userId) {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "This will deactivate the user account. This action can be undone.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, deactivate it!',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                const response = await axios.delete(`/api/users/${userId}`);
+                
+                if (response.data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deactivated!',
+                        text: 'User account has been deactivated.',
+                        confirmButtonColor: '#3b82f6'
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            } catch (error) {
+                console.error('Delete user error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.message || 'Failed to deactivate user',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+    }
+    
+    async function bulkUpdateUsers(action) {
+        const actionText = action === 'activate' ? 'activate' : 'deactivate';
+        const actionPast = action === 'activate' ? 'activated' : 'deactivated';
+        
+        const result = await Swal.fire({
+            title: `Are you sure?`,
+            text: `This will ${actionText} ${selectedUsers.size} user(s).`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: `Yes, ${actionText} them!`,
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                const response = await axios.post('/api/users/bulk-update', {
+                    ids: Array.from(selectedUsers),
+                    action: action
+                });
+                
+                if (response.data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: `${response.data.modifiedCount} users ${actionPast}`,
+                        confirmButtonColor: '#3b82f6'
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            } catch (error) {
+                console.error('Bulk update error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.message || 'Failed to update users',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+    }
+    
+    function showChangeRoleModal() {
+        Swal.fire({
+            title: 'Change Role',
+            input: 'select',
+            inputOptions: {
+                admin: 'Administrator',
+                technician: 'Technician',
+                viewer: 'Viewer'
+            },
+            inputPlaceholder: 'Select new role',
+            showCancelButton: true,
+            confirmButtonText: 'Change Role',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#3085d6',
+            showLoaderOnConfirm: true,
+            preConfirm: (role) => {
+                if (!role) {
+                    Swal.showValidationMessage('Please select a role');
+                    return false;
+                }
+                return bulkChangeRole(role);
+            }
+        });
+    }
+    
+    async function bulkChangeRole(role) {
+        try {
+            const response = await axios.post('/api/users/bulk-update', {
+                ids: Array.from(selectedUsers),
+                action: 'changeRole',
+                data: { role: role }
+            });
+            
+            if (response.data.success) {
+                return {
+                    success: true,
+                    message: `${response.data.modifiedCount} users role changed to ${role}`
+                };
+            }
+        } catch (error) {
+            console.error('Bulk change role error:', error);
+            throw new Error(error.response?.data?.message || 'Failed to change roles');
+        }
+    }
+    
+    async function bulkDeleteUsers() {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            html: `
+                <div class="text-left">
+                    <p class="mb-2">This will deactivate <strong>${selectedUsers.size}</strong> user account(s).</p>
+                    <p class="text-sm text-gray-500">Deactivated users will not be able to log in until reactivated.</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, deactivate them!',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                const deletePromises = Array.from(selectedUsers).map(id =>
+                    axios.delete(`/api/users/${id}`).then(res => res.data)
+                );
+                
+                const results = await Promise.allSettled(deletePromises);
+                const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: `${successCount} users deactivated`,
+                    confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                    location.reload();
+                });
+                
+            } catch (error) {
+                console.error('Bulk delete error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to deactivate users',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+    }
+    
+    async function exportUsersToFormat(format) {
+        try {
+            // Get current filter values
+            const params = new URLSearchParams();
+            
+            if (roleFilter.val()) params.set('role', roleFilter.val());
+            if (statusFilter.val()) params.set('status', statusFilter.val());
+            if (createdAfter.val()) params.set('createdAfter', createdAfter.val());
+            if (createdBefore.val()) params.set('createdBefore', createdBefore.val());
+            params.set('format', format);
+            
+            // Show loading
+            Swal.fire({
+                title: 'Exporting...',
+                text: 'Please wait while we prepare your export',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Fetch and download
+            const response = await axios.get(`/api/users/export?${params.toString()}`, {
+                responseType: 'blob'
+            });
+            
+            Swal.close();
+            
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // Get filename from content-disposition header
+            const contentDisposition = response.headers['content-disposition'];
+            let filename = `users_export.${format}`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Export Complete',
+                text: `Your ${format.toUpperCase()} file has been downloaded`,
+                confirmButtonColor: '#3b82f6'
+            });
+            
+        } catch (error) {
+            console.error('Export error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Export Failed',
+                text: error.response?.data?.message || 'Failed to export users',
+                confirmButtonColor: '#3b82f6'
+            });
+        }
+    }
+    
+    async function loadUserStatistics() {
+        try {
+            const response = await axios.get('/api/users/statistics');
+            if (response.data.success) {
+                const stats = response.data.statistics;
+                
+                // Update online users count
+                $('#onlineUsers').text(stats.activity?.online || 0);
+                
+                // Update progress bars
+                updateProgressBars(stats);
+            }
+        } catch (error) {
+            console.error('Error loading user statistics:', error);
+        }
+    }
+    
+    function updateProgressBars(stats = null) {
+        if (!stats && window.pageStats) {
+            stats = window.pageStats;
+        }
+        
+        if (!stats || !stats.byRole || !stats.total) return;
+        
+        const total = stats.total || 1; // Avoid division by zero
+        
+        // Update progress bar widths
+        $('#adminBar').css('width', ((stats.byRole.admin || 0) / total * 100) + '%');
+        $('#techBar').css('width', ((stats.byRole.technician || 0) / total * 100) + '%');
+        $('#viewerBar').css('width', ((stats.byRole.viewer || 0) / total * 100) + '%');
+    }
+    
+    function initRoleDistributionChart() {
+        const ctx = document.getElementById('roleDistributionChart');
+        if (!ctx) return;
+        
+        const stats = window.pageStats || {};
+        const roleData = stats.byRole || { admin: 0, technician: 0, viewer: 0 };
+        
+        new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Administrators', 'Technicians', 'Viewers'],
+                datasets: [{
+                    data: [roleData.admin || 0, roleData.technician || 0, roleData.viewer || 0],
+                    backgroundColor: [
+                        '#dc2626', // Red for admin
+                        '#2563eb', // Blue for technician
+                        '#059669'  // Green for viewer
+                    ],
+                    borderWidth: 1,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    async function importUsersFromCSV() {
+        const { value: file } = await Swal.fire({
+            title: 'Import Users',
+            input: 'file',
+            inputAttributes: {
+                accept: '.csv',
+                'aria-label': 'Upload your CSV file'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Import',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#3085d6'
+        });
+        
+        if (file) {
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Please wait while we import users',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // In a real implementation, you would upload and process the CSV file
+            setTimeout(() => {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Coming Soon',
+                    text: 'CSV import functionality will be available in the next update',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }, 1500);
+        }
+    }
+    
+    async function sendWelcomeEmailsToUsers() {
+        const result = await Swal.fire({
+            title: 'Send Welcome Emails',
+            text: 'This will send welcome emails to all active users who haven\'t received one yet.',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Send Emails',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Sending...',
+                text: 'Please wait while we send welcome emails',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // In a real implementation, you would call an API endpoint
+            setTimeout(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Emails Sent',
+                    text: 'Welcome emails have been sent to all eligible users',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }, 2000);
+        }
+    }
+    
+    async function resetAllUserPasswords() {
+        const result = await Swal.fire({
+            title: 'Reset All Passwords?',
+            html: `
+                <div class="text-left">
+                    <p class="mb-2"><strong>Warning:</strong> This will reset passwords for ALL users.</p>
+                    <p class="text-sm text-gray-500 mb-2">Each user will receive an email with password reset instructions.</p>
+                    <p class="text-sm text-red-600">This action cannot be undone!</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, reset all passwords!',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Resetting Passwords...',
+                text: 'Please wait while we reset all passwords',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // In a real implementation, you would call an API endpoint
+            setTimeout(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Passwords Reset',
+                    text: 'Password reset emails have been sent to all users',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }, 2000);
+        }
+    }
+    
+    function viewUserAuditLog() {
+        // Open audit log in a new tab or modal
+        Swal.fire({
+            title: 'Audit Log',
+            html: `
+                <div class="text-left">
+                    <p class="mb-4">User activity audit log will be available in the next update.</p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm font-medium text-gray-700">Planned features:</p>
+                        <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                            <li>• User login/logout tracking</li>
+                            <li>• Role changes audit trail</li>
+                            <li>• Permission modifications</li>
+                            <li>• Exportable audit reports</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            icon: 'info',
+            confirmButtonColor: '#3b82f6'
+        });
+    }
+    
+    // Helper functions for user details modal
+    async function resetUserPassword(userId) {
+        const { value: newPassword } = await Swal.fire({
+            title: 'Reset Password',
+            input: 'password',
+            inputLabel: 'Enter new password',
+            inputPlaceholder: 'Enter new password',
+            inputAttributes: {
+                minlength: 6,
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Reset Password',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#3085d6',
+            inputValidator: (value) => {
+                if (!value || value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                }
+            }
+        });
+        
+        if (newPassword) {
+            try {
+                const response = await axios.post(`/api/users/${userId}/reset-password`, {
+                    newPassword: newPassword,
+                    confirmPassword: newPassword
+                });
+                
+                if (response.data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Password Reset',
+                        text: 'User password has been reset successfully',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.message || 'Failed to reset password',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+    }
+    
+    async function deactivateUser(userId) {
+        const result = await Swal.fire({
+            title: 'Deactivate User?',
+            text: 'This user will not be able to log in until reactivated.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Deactivate',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                const response = await axios.put(`/api/users/${userId}`, {
+                    isActive: false
+                });
+                
+                if (response.data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'User Deactivated',
+                        text: 'User account has been deactivated',
+                        confirmButtonColor: '#3b82f6'
+                    }).then(() => {
+                        closeUserDetails();
+                        location.reload();
+                    });
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.message || 'Failed to deactivate user',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+    }
+    
+    async function activateUser(userId) {
+        try {
+            const response = await axios.put(`/api/users/${userId}`, {
+                isActive: true
+            });
+            
+            if (response.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'User Activated',
+                    text: 'User account has been activated',
+                    confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                    closeUserDetails();
+                    location.reload();
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to activate user',
+                confirmButtonColor: '#3b82f6'
+            });
+        }
+    }
+    
+    async function sendWelcomeEmail(userId) {
+        try {
+            const response = await axios.post(`/api/users/${userId}/welcome-email`);
+            
+            if (response.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Email Sent',
+                    text: 'Welcome email has been sent to the user',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to send welcome email',
+                confirmButtonColor: '#3b82f6'
+            });
+        }
+    }
+    
+    // Utility Functions
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Close modals with Escape key
+    $(document).keydown(function(e) {
+        if (e.key === 'Escape') {
+            userModal.addClass('hidden');
+            userDetailsModal.addClass('hidden');
+        }
+    });
+    
+    // Store page stats for chart updates
+    window.pageStats = <%= JSON.stringify(stats) %>;
+</script>

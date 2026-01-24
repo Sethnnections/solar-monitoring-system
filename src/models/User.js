@@ -39,6 +39,40 @@ const UserSchema = new mongoose.Schema({
             'Please provide a valid Malawi phone number'
         ]
     },
+       department: {
+        type: String,
+        trim: true
+    },
+    
+    avatar: {
+        type: String,
+        default: ''
+    },
+    
+    lastActivity: {
+        type: Date
+    },
+    
+    preferences: {
+        theme: {
+            type: String,
+            enum: ['light', 'dark', 'auto'],
+            default: 'auto'
+        },
+        language: {
+            type: String,
+            default: 'en'
+        },
+        timezone: {
+            type: String,
+            default: 'Africa/Blantyre'
+        }
+    },
+    
+    twoFactorEnabled: {
+        type: Boolean,
+        default: false
+    },
     isActive: {
         type: Boolean,
         default: true
@@ -172,6 +206,18 @@ UserSchema.statics.findAdmins = function() {
         isActive: true 
     }).select('name email');
 };
+
+UserSchema.virtual('isOnline').get(function() {
+    if (!this.lastActivity) return false;
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    return this.lastActivity > fifteenMinutesAgo;
+});
+
+// Add virtual for days since creation
+UserSchema.virtual('memberSinceDays').get(function() {
+    const diff = Date.now() - this.createdAt.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+});
 
 // Indexes
 UserSchema.index({ role: 1 });

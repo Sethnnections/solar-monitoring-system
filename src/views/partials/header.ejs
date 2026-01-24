@@ -1,256 +1,125 @@
-<header class="fixed top-0 left-0 right-0 z-40 glass-header">
-    <div class="w-full px-6 py-3">
+<header class="bg-gradient-to-r from-gray-900 to-black text-white fixed top-0 right-0 left-0 md:left-64 z-40 shadow-lg">
+    <div class="container mx-auto px-4 py-3">
         <div class="flex justify-between items-center">
-            <!-- Logo and Brand - Left aligned -->
-            <div class="flex items-center space-x-3">
-                <button id="mobileMenuButton" class="md:hidden bg-yellow-500 text-black p-2 rounded-lg hover:bg-yellow-600 transition duration-200">
-                    <i class="fas fa-bars text-lg"></i>
+            <!-- Left Section -->
+            <div class="flex items-center space-x-6">
+                <!-- Mobile Menu Toggle -->
+                <button id="sidebarToggle" class="md:hidden text-gray-300 hover:text-white focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
                 </button>
-                <div class="bg-yellow-500 p-2 rounded-lg shadow-lg">
-                    <i class="fas fa-solar-panel text-black text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold text-white">Solar Monitoring System</h1>
-                    <p class="text-sm text-gray-300">Kadidi Health Center, Lunzu</p>
-                </div>
-            </div>
-            
-            <!-- Center: Quick Stats/Info -->
-            <div class="hidden lg:flex items-center space-x-6">
-                <!-- Current Time -->
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-clock text-yellow-500"></i>
-                    <span class="text-sm text-white" id="headerTime">
-                        <%= new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
-                    </span>
+                
+                <!-- Logo/Title -->
+                <div class="hidden md:flex items-center space-x-2">
+                    <i class="fas fa-sun text-yellow-500 text-xl"></i>
+                    <h1 class="text-lg font-bold tracking-tight">Solar Monitoring System</h1>
                 </div>
                 
-                <!-- Active Alerts -->
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-exclamation-triangle text-red-500"></i>
-                    <span class="text-sm text-white">
-                        <span id="activeAlertsCount">
-                            <%= recentAlerts ? recentAlerts.filter(a => !a.resolved).length : 0 %>
-                        </span> Active Alerts
-                    </span>
-                </div>
-                
-                <!-- System Voltage -->
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-bolt text-green-500"></i>
-                    <span class="text-sm text-white" id="currentVoltage">
-                        <% if (latestData && latestData.voltage) { %>
+                <!-- Quick Stats -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <!-- Voltage Indicator -->
+                    <% if (latestData && latestData.voltage && latestData.voltage.value !== undefined) { %>
+                    <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1.5 rounded-lg">
+                        <i class="fas fa-bolt text-green-500"></i>
+                        <span class="text-sm text-white" id="currentVoltage">
                             <%= latestData.voltage.value.toFixed(1) %>V
-                        <% } else { %>
-                            0V
-                        <% } %>
-                    </span>
+                        </span>
+                    </div>
+                    <% } %>
+                    
+                    <!-- Active Alerts Indicator -->
+                    <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1.5 rounded-lg">
+                        <i class="fas fa-exclamation-triangle text-red-500"></i>
+                        <span class="text-sm text-white">
+                            <span id="activeAlertsCount">
+                                <%= activeAlertsCount || 0 %>
+                            </span> Active Alerts
+                        </span>
+                    </div>
                 </div>
             </div>
             
-            <!-- Right side: User and Notifications -->
+            <!-- Right Section -->
             <div class="flex items-center space-x-4">
-                <!-- System Status Badge -->
-                <div class="hidden md:flex items-center space-x-2 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span class="text-sm text-white">Online</span>
+                <!-- Time Display -->
+                <div class="hidden md:block">
+                    <span class="text-sm text-gray-300" id="currentTime">
+                        <%= currentTime || new Date().toLocaleTimeString() %>
+                    </span>
                 </div>
                 
-                <!-- Notifications -->
-                <div class="relative">
-                    <button id="notificationButton" class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-bell text-lg"></i>
-                        <% if (recentAlerts && recentAlerts.filter(a => !a.resolved).length > 0) { %>
-                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                                <%= recentAlerts.filter(a => !a.resolved).length %>
-                            </span>
-                        <% } %>
+                <!-- User Dropdown -->
+                <% if (user) { %>
+                <div class="relative" id="userDropdown">
+                    <button class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition duration-200">
+                        <div class="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div class="hidden md:block text-left">
+                            <div class="text-sm font-medium">
+                                <%= user.name || 'User' %>
+                            </div>
+                            <div class="text-xs text-gray-400 capitalize">
+                                <%= user.role || 'Role' %>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                     </button>
                     
-                    <!-- Notifications Dropdown -->
-                    <div id="notificationDropdown" class="absolute right-0 mt-2 w-80 bg-gray-800 rounded-lg shadow-xl py-2 hidden z-50 border border-gray-700 max-h-96 overflow-y-auto">
-                        <div class="px-4 py-2 border-b border-gray-700">
-                            <h3 class="font-medium text-white">Notifications</h3>
-                        </div>
-                        <div class="notification-list">
-                            <% if (recentAlerts && recentAlerts.length > 0) { %>
-                                <% recentAlerts.slice(0, 5).forEach(function(alert) { %>
-                                    <a href="/alerts" class="block px-4 py-3 hover:bg-gray-700 border-b border-gray-700 last:border-b-0">
-                                        <div class="flex items-start">
-                                            <div class="flex-shrink-0">
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center <%= alert.severity === 'critical' ? 'bg-red-500' : alert.severity === 'high' ? 'bg-orange-500' : 'bg-yellow-500' %>">
-                                                    <i class="fas fa-exclamation text-xs text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div class="ml-3">
-                                                <p class="text-sm text-white font-medium"><%= alert.title %></p>
-                                                <p class="text-xs text-gray-400 mt-1"><%= new Date(alert.createdAt).toLocaleTimeString() %></p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                <% }); %>
-                            <% } else { %>
-                                <div class="px-4 py-8 text-center">
-                                    <i class="fas fa-bell-slash text-gray-500 text-2xl mb-2"></i>
-                                    <p class="text-gray-400 text-sm">No new notifications</p>
-                                </div>
-                            <% } %>
-                        </div>
-                        <div class="px-4 py-2 border-t border-gray-700">
-                            <a href="/alerts" class="text-sm text-yellow-500 hover:text-yellow-400 block text-center">
-                                View All Notifications
+                    <!-- Dropdown Menu -->
+                    <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50">
+                        <div class="py-1">
+                            <a href="/profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-circle mr-2 text-gray-500"></i>Profile
+                            </a>
+                            <div class="border-t my-1"></div>
+                            <a href="/logout" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
                             </a>
                         </div>
                     </div>
                 </div>
-                
-                <!-- User Menu -->
-                <div class="relative">
-                    <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition duration-200 border border-gray-700">
-                        <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
-                            <i class="fas fa-user text-black"></i>
-                        </div>
-                        <div class="hidden md:block text-left">
-                            <p class="text-sm font-medium text-white"><%= user.name %></p>
-                            <p class="text-xs text-gray-300 capitalize"><%= user.role %></p>
-                        </div>
-                        <i class="fas fa-chevron-down text-gray-400"></i>
-                    </button>
-                    
-                    <!-- User Dropdown Menu -->
-                    <div id="userDropdown" class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl py-2 hidden z-50 border border-gray-700">
-                        <div class="px-4 py-2 border-b border-gray-700">
-                            <p class="text-sm font-medium text-white">Signed in as</p>
-                            <p class="text-xs text-gray-300"><%= user.email %></p>
-                        </div>
-                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-yellow-500 hover:text-black transition duration-200">
-                            <i class="fas fa-user-circle mr-2"></i> My Profile
-                        </a>
-                        <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-yellow-500 hover:text-black transition duration-200">
-                            <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                        </a>
-                        <% if (user.role === 'admin') { %>
-                        <a href="/users" class="block px-4 py-2 text-sm text-gray-300 hover:bg-yellow-500 hover:text-black transition duration-200">
-                            <i class="fas fa-users-cog mr-2"></i> User Management
-                        </a>
-                        <% } %>
-                        <div class="border-t border-gray-700 my-2"></div>
-                        <a href="/logout" class="block px-4 py-2 text-sm text-red-400 hover:bg-red-600 hover:text-white transition duration-200">
-                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                        </a>
-                    </div>
-                </div>
+                <% } %>
             </div>
         </div>
     </div>
 </header>
 
-<style>
-    .glass-header {
-        background: linear-gradient(135deg, rgba(31, 41, 55, 0.98), rgba(17, 24, 39, 0.98));
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-        width: 100%;
-    }
-    
-    /* Add subtle animation to header */
-    @keyframes slideIn {
-        from {
-            transform: translateY(-100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-    
-    .glass-header {
-        animation: slideIn 0.3s ease-out;
-    }
-</style>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Update time every minute
-        function updateTime() {
-            const timeElement = document.getElementById('headerTime');
-            if (timeElement) {
-                const now = new Date();
-                timeElement.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            }
-        }
-        
-        // Initial update
-        updateTime();
-        // Update every minute
-        setInterval(updateTime, 60000);
-        
-        // User dropdown toggle
-        const userMenuButton = document.getElementById('userMenuButton');
-        const userDropdown = document.getElementById('userDropdown');
-        
-        if (userMenuButton && userDropdown) {
-            userMenuButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userDropdown.classList.toggle('hidden');
-                // Close notification dropdown if open
-                notificationDropdown.classList.add('hidden');
-            });
-        }
-        
-        // Notification dropdown toggle
-        const notificationButton = document.getElementById('notificationButton');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        
-        if (notificationButton && notificationDropdown) {
-            notificationButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                notificationDropdown.classList.toggle('hidden');
-                // Close user dropdown if open
-                userDropdown.classList.add('hidden');
-            });
-        }
-        
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function() {
-            if (userDropdown) userDropdown.classList.add('hidden');
-            if (notificationDropdown) notificationDropdown.classList.add('hidden');
+    // Update time every minute
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
         });
-        
-        // Prevent dropdowns from closing when clicking inside
-        if (userDropdown) {
-            userDropdown.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
+        const timeElement = document.getElementById('currentTime');
+        if (timeElement) {
+            timeElement.textContent = timeString;
         }
-        
-        if (notificationDropdown) {
-            notificationDropdown.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
+    }
+    
+    // Initialize time
+    updateTime();
+    setInterval(updateTime, 60000);
+    
+    // Toggle user dropdown
+    const userDropdown = document.getElementById('userDropdown');
+    if (userDropdown) {
+        userDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('userDropdownMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function() {
+        const menu = document.getElementById('userDropdownMenu');
+        if (menu) {
+            menu.classList.add('hidden');
         }
-        
-        // Refresh header data periodically
-        function refreshHeaderData() {
-            // You can add AJAX calls here to update:
-            // - Active alerts count
-            // - Current voltage
-            // - Notifications
-            // Example:
-            /*
-            fetch('/api/alerts/active/count')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && document.getElementById('activeAlertsCount')) {
-                        document.getElementById('activeAlertsCount').textContent = data.total;
-                    }
-                });
-            */
-        }
-        
-        // Refresh every 30 seconds
-        setInterval(refreshHeaderData, 30000);
     });
 </script>

@@ -5,90 +5,92 @@ const { USER_ROLES, ALERT_SEVERITY, ALERT_TYPES } = require('../config/constants
 
 class AlertController {
     // Render alerts page
-    static async renderAlerts(req, res) {
-        try {
-            const { status = 'active', severity, type, page = 1 } = req.query;
-            
-            // Build query
-            const query = {};
-            
-            if (status === 'active') {
-                query.resolved = false;
-            } else if (status === 'resolved') {
-                query.resolved = true;
-            } else if (status === 'acknowledged') {
-                query.acknowledged = true;
-                query.resolved = false;
-            } else if (status === 'unacknowledged') {
-                query.acknowledged = false;
-                query.resolved = false;
-            }
-            
-            if (severity && Object.values(ALERT_SEVERITY).includes(severity)) {
-                query.severity = severity;
-            }
-            
-            if (type && Object.values(ALERT_TYPES).includes(type)) {
-                query.type = type;
-            }
-            
-            // Pagination
-            const pageSize = 20;
-            const skip = (parseInt(page) - 1) * pageSize;
-            
-            // Get total count
-            const total = await Alert.countDocuments(query);
-            
-            // Get alerts
-            const alerts = await Alert.find(query)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(pageSize)
-                .populate('acknowledgedBy', 'name')
-                .populate('resolvedBy', 'name');
-            
-            // Calculate pagination
-            const totalPages = Math.ceil(total / pageSize);
-            const pagination = Helpers.createPagination(total, parseInt(page), pageSize);
-            
-            // Get alert statistics
-            const stats = await Alert.getStatistics(7);
-            
-            res.render('pages/alerts', {
-                title: 'Alerts - Solar Monitoring System',
-                user: req.session.user,
-                alerts,
-                pagination,
-                stats,
-                filters: {
-                    status,
-                    severity,
-                    type
-                },
-                alertTypes: ALERT_TYPES,
-                severityLevels: ALERT_SEVERITY,
-                helpers: Helpers,
-                success: req.query.success || null,
-                error: req.query.error || null
-            });
-            
-        } catch (error) {
-            console.error('Render alerts error:', error);
-            res.status(500).render('pages/alerts', {
-                title: 'Alerts - Solar Monitoring System',
-                user: req.session.user,
-                alerts: [],
-                pagination: null,
-                stats: null,
-                filters: {},
-                alertTypes: ALERT_TYPES,
-                severityLevels: ALERT_SEVERITY,
-                helpers: Helpers,
-                success: null,
-                error: 'Failed to load alerts'
-            });
+static async renderAlerts(req, res) {
+    try {
+        const { status = 'active', severity, type, page = 1 } = req.query;
+        
+        // Build query
+        const query = {};
+        
+        if (status === 'active') {
+            query.resolved = false;
+        } else if (status === 'resolved') {
+            query.resolved = true;
+        } else if (status === 'acknowledged') {
+            query.acknowledged = true;
+            query.resolved = false;
+        } else if (status === 'unacknowledged') {
+            query.acknowledged = false;
+            query.resolved = false;
         }
+        
+        if (severity && Object.values(ALERT_SEVERITY).includes(severity)) {
+            query.severity = severity;
+        }
+        
+        if (type && Object.values(ALERT_TYPES).includes(type)) {
+            query.type = type;
+        }
+        
+        // Pagination
+        const pageSize = 20;
+        const skip = (parseInt(page) - 1) * pageSize;
+        
+        // Get total count
+        const total = await Alert.countDocuments(query);
+        
+        // Get alerts
+        const alerts = await Alert.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize)
+            .populate('acknowledgedBy', 'name')
+            .populate('resolvedBy', 'name');
+        
+        // Calculate pagination
+        const totalPages = Math.ceil(total / pageSize);
+        const pagination = Helpers.createPagination(total, parseInt(page), pageSize);
+        
+        // Get alert statistics for this page
+        const stats = await Alert.getStatistics(7);
+        
+        res.render('pages/alerts', {
+            title: 'Alerts - Solar Monitoring System',
+            user: req.session.user,
+            alerts,  // Page-specific alerts
+            pagination,  // Page-specific pagination
+            stats,  // Page-specific stats (different from middleware stats)
+            filters: {
+                status,
+                severity,
+                type
+            },
+            alertTypes: ALERT_TYPES,
+            severityLevels: ALERT_SEVERITY,
+            helpers: Helpers,
+            success: req.query.success || null,
+            error: req.query.error || null
+            // Note: latestData, recentAlerts, alertStats, systemStatus, dailySummary
+            // are now provided by the middleware via res.locals
+        });
+        
+    } catch (error) {
+        console.error('Render alerts error:', error);
+        res.status(500).render('pages/alerts', {
+            title: 'Alerts - Solar Monitoring System',
+            user: req.session.user,
+            alerts: [],
+            pagination: null,
+            stats: null,
+            filters: {},
+            alertTypes: ALERT_TYPES,
+            severityLevels: ALERT_SEVERITY,
+            helpers: Helpers,
+            success: null,
+            error: 'Failed to load alerts'
+        });
     }
+}
     
     // Get alerts (API)
     static async getAlerts(req, res) {
@@ -704,6 +706,150 @@ class AlertController {
                 error: error.message
             });
         }
+    }
+
+    // Export alerts (API)
+    static async exportAlerts(req, res) {
+        try {
+            const {
+                status,
+                severity,
+                type,
+                startDate,
+                endDate,
+                format = 'csv'
+            } = req.query;
+            
+            // Build query
+            const query = {};
+            
+            if (status === 'active') {
+                query.resolved = false;
+            } else if (status === 'resolved') {
+                query.resolved = true;
+            } else if (status === 'acknowledged') {
+                query.acknowledged = true;
+                query.resolved = false;
+            } else if (status === 'unacknowledged') {
+                query.acknowledged = false;
+                query.resolved = false;
+            }
+            
+            if (severity) query.severity = severity;
+            if (type) query.type = type;
+            
+            // Date range
+            if (startDate || endDate) {
+                query.createdAt = {};
+                if (startDate) query.createdAt.$gte = new Date(startDate);
+                if (endDate) query.createdAt.$lte = new Date(endDate);
+            }
+            
+            // Get alerts
+            const alerts = await Alert.find(query)
+                .sort({ createdAt: -1 })
+                .populate('acknowledgedBy', 'name')
+                .populate('resolvedBy', 'name');
+            
+            if (alerts.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No alerts found for export'
+                });
+            }
+            
+            // Format data based on requested format
+            let exportData;
+            let contentType;
+            let filename;
+            
+            switch (format.toLowerCase()) {
+                case 'csv':
+                    exportData = this.convertAlertsToCSV(alerts);
+                    contentType = 'text/csv';
+                    filename = `alerts_export_${new Date().toISOString().split('T')[0]}.csv`;
+                    break;
+                    
+                case 'json':
+                    exportData = JSON.stringify(alerts, null, 2);
+                    contentType = 'application/json';
+                    filename = `alerts_export_${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                    
+                default:
+                    exportData = JSON.stringify(alerts, null, 2);
+                    contentType = 'application/json';
+                    filename = `alerts_export_${new Date().toISOString().split('T')[0]}.json`;
+            }
+            
+            // Set headers for download
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            
+            res.send(exportData);
+            
+        } catch (error) {
+            console.error('Export alerts error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to export alerts',
+                error: error.message
+            });
+        }
+    }
+
+    // Helper method to convert alerts to CSV
+    static convertAlertsToCSV(alerts) {
+        const headers = [
+            'ID',
+            'Title',
+            'Message',
+            'Type',
+            'Severity',
+            'Device ID',
+            'Sensor Value',
+            'Threshold',
+            'Unit',
+            'Location',
+            'Acknowledged',
+            'Acknowledged By',
+            'Acknowledged At',
+            'Resolved',
+            'Resolved By',
+            'Resolved At',
+            'Resolution Notes',
+            'Created At',
+            'Updated At'
+        ];
+        
+        const rows = alerts.map(alert => [
+            alert._id.toString(),
+            `"${alert.title.replace(/"/g, '""')}"`,
+            `"${alert.message.replace(/"/g, '""')}"`,
+            alert.type,
+            alert.severity,
+            alert.deviceId || 'ESP32_SOLAR_01',
+            alert.sensorValue || '',
+            alert.threshold || '',
+            alert.unit || '',
+            `"${alert.location.replace(/"/g, '""')}"`,
+            alert.acknowledged ? 'Yes' : 'No',
+            alert.acknowledgedBy?.name || '',
+            alert.acknowledgedAt ? new Date(alert.acknowledgedAt).toISOString() : '',
+            alert.resolved ? 'Yes' : 'No',
+            alert.resolvedBy?.name || '',
+            alert.resolvedAt ? new Date(alert.resolvedAt).toISOString() : '',
+            `"${(alert.resolutionNotes || '').replace(/"/g, '""')}"`,
+            new Date(alert.createdAt).toISOString(),
+            new Date(alert.updatedAt).toISOString()
+        ]);
+        
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+        
+        return csvContent;
     }
 }
 

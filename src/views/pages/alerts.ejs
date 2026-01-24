@@ -1,40 +1,509 @@
-<%- include('../partials/head', { title: 'Alerts Management' }); %>
+<%- include('../partials/head', { title: 'Alerts - Solar Monitoring System' }); %>
 <%- include('../partials/header'); %>
-<%- include('../partials/sidebar', { currentPath: '/alerts' }); %>
+<%- include('../partials/sidebar'); %>
 
-<main class="md:ml-64 pt-16 min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-4xl mx-auto">
-            <div class="text-center py-12">
-                <div class="inline-block p-4 bg-yellow-100 rounded-full mb-6">
-                    <i class="fas fa-exclamation-triangle text-yellow-600 text-4xl"></i>
+<!-- Main Content -->
+<main class="md:ml-64 pt-16 min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Alert Management</h1>
+                    <p class="text-gray-600">Monitor and manage system alerts and notifications</p>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-4">Alerts Management</h1>
-                <p class="text-lg text-gray-600 mb-8">This page is coming soon. The alerts management interface will be available in the next update.</p>
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <!-- Create Alert Button -->
+                    <button id="createAlertBtn" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-plus-circle mr-2"></i> Create Alert
+                    </button>
+                    
+                    <!-- Bulk Actions Dropdown -->
+                    <div class="relative" id="bulkActionsDropdown">
+                        <button id="bulkActionsBtn" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200">
+                            <i class="fas fa-tasks mr-2"></i> Bulk Actions
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div id="bulkActionsMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10">
+                            <div class="py-1">
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-action="acknowledge">
+                                    <i class="fas fa-check-circle mr-2 text-green-600"></i>Acknowledge Selected
+                                </button>
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-action="resolve">
+                                    <i class="fas fa-check-double mr-2 text-blue-600"></i>Resolve Selected
+                                </button>
+                                <div class="border-t my-1"></div>
+                                <button class="bulk-action-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600" data-action="delete">
+                                    <i class="fas fa-trash mr-2"></i>Delete Selected
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative" id="exportDropdown">
+                        <button id="exportBtn" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
+                            <i class="fas fa-download mr-2"></i> Export
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div id="exportMenu" class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg z-10">
+                            <div class="py-1">
+                                <button class="export-option w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-format="csv">
+                                    <i class="fas fa-file-csv mr-2 text-green-600"></i>CSV
+                                </button>
+                                <button class="export-option w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-format="json">
+                                    <i class="fas fa-file-code mr-2 text-blue-600"></i>JSON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                                        
+                    
+                    <!-- Refresh Button -->
+                    <button id="refreshAlerts" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Alert Summary Cards -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg mr-4">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Critical Alerts</p>
+                            <p class="text-2xl font-bold text-gray-800" id="criticalCount">
+                                <%= stats && stats.bySeverity && stats.bySeverity.critical ? stats.bySeverity.critical : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="text-yellow-500 mb-4">
-                            <i class="fas fa-bell text-2xl"></i>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-orange-100 rounded-lg mr-4">
+                            <i class="fas fa-exclamation-circle text-orange-600 text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-800 mb-2">Active Alerts</h3>
-                        <p class="text-gray-600 text-sm">View and manage all active system alerts</p>
+                        <div>
+                            <p class="text-sm text-gray-600">High Priority</p>
+                            <p class="text-2xl font-bold text-gray-800" id="highCount">
+                                <%= stats && stats.bySeverity && stats.bySeverity.high ? stats.bySeverity.high : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                            <i class="fas fa-info-circle text-yellow-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Active Alerts</p>
+                            <p class="text-2xl font-bold text-gray-800" id="activeCount">
+                                <%= stats && stats.total ? stats.total : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg mr-4">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Resolved Today</p>
+                            <p class="text-2xl font-bold text-gray-800" id="resolvedCount">
+                                <%= stats && stats.resolved ? stats.resolved : 0 %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filters and Search -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active Alerts</option>
+                            <option value="unacknowledged" <%= filters.status === 'unacknowledged' ? 'selected' : '' %>>Unacknowledged</option>
+                            <option value="acknowledged" <%= filters.status === 'acknowledged' ? 'selected' : '' %>>Acknowledged</option>
+                            <option value="resolved" <%= filters.status === 'resolved' ? 'selected' : '' %>>Resolved</option>
+                            <option value="">All Alerts</option>
+                        </select>
                     </div>
                     
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="text-green-500 mb-4">
-                            <i class="fas fa-history text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-gray-800 mb-2">Alert History</h3>
-                        <p class="text-gray-600 text-sm">Access historical alert data and trends</p>
+                    <!-- Severity Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Severity</label>
+                        <select id="severityFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Severities</option>
+                            <% Object.keys(severityLevels).forEach(function(severity) { %>
+                                <option value="<%= severityLevels[severity] %>" 
+                                        <%= filters.severity === severityLevels[severity] ? 'selected' : '' %>>
+                                    <%= severityLevels[severity] %>
+                                </option>
+                            <% }); %>
+                        </select>
                     </div>
                     
-                    <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                        <div class="text-blue-500 mb-4">
-                            <i class="fas fa-cog text-2xl"></i>
+                    <!-- Type Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Alert Type</label>
+                        <select id="typeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Types</option>
+                            <% Object.keys(alertTypes).forEach(function(type) { %>
+                                <option value="<%= alertTypes[type] %>" 
+                                        <%= filters.type === alertTypes[type] ? 'selected' : '' %>>
+                                    <%= alertTypes[type] %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    
+                    <!-- Search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <div class="relative">
+                            <input type="text" id="searchInput" 
+                                   placeholder="Search alerts..." 
+                                   class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-800 mb-2">Alert Settings</h3>
-                        <p class="text-gray-600 text-sm">Configure alert thresholds and notifications</p>
+                    </div>
+                </div>
+                
+                <!-- Advanced Filters (Collapsible) -->
+                <div class="mt-4">
+                    <button id="toggleAdvancedFilters" class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                        <i class="fas fa-filter mr-2"></i>
+                        <span>Advanced Filters</span>
+                        <i class="fas fa-chevron-down ml-2"></i>
+                    </button>
+                    
+                    <div id="advancedFilters" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                                <input type="date" id="dateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">to</label>
+                                <input type="date" id="dateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Device ID</label>
+                                <input type="text" id="deviceFilter" placeholder="Device ID" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button id="applyAdvancedFilters" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Apply Filters
+                            </button>
+                            <button id="resetFilters" class="ml-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                                Reset All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Alerts Table -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800">Alerts List</h2>
+                            <div class="text-sm text-gray-600">
+                                <span id="selectedCount">0</span> selected of <span id="totalAlerts"><%= pagination ? pagination.total : 0 %></span> alerts
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-4 py-3 text-left">
+                                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        </th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alert</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" id="alertsTableBody">
+                                    <% if (alerts && alerts.length > 0) { %>
+                                        <% alerts.forEach(function(alert) { %>
+                                            <tr class="hover:bg-gray-50" data-alert-id="<%= alert._id %>">
+                                                <td class="px-4 py-3">
+                                                    <input type="checkbox" class="alert-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div>
+                                                        <div class="font-medium text-gray-900"><%= alert.title %></div>
+                                                        <div class="text-sm text-gray-500"><%= alert.message %></div>
+                                                        <div class="text-xs text-gray-400 mt-1">
+                                                            <i class="fas fa-microchip mr-1"></i><%= alert.deviceId || 'ESP32_SOLAR_01' %>
+                                                            <span class="mx-2">•</span>
+                                                            <i class="fas fa-map-marker-alt mr-1"></i><%= alert.location || 'Kadidi Health Center' %>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                        <%= alert.severity === 'critical' ? 'bg-red-100 text-red-800' : 
+                                                           alert.severity === 'high' ? 'bg-orange-100 text-orange-800' : 
+                                                           alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                                           'bg-blue-100 text-blue-800' %>">
+                                                        <i class="fas 
+                                                            <%= alert.severity === 'critical' ? 'fa-exclamation-triangle' : 
+                                                               alert.severity === 'high' ? 'fa-exclamation-circle' : 
+                                                               alert.severity === 'medium' ? 'fa-info-circle' : 
+                                                               'fa-info' %> mr-1">
+                                                        </i>
+                                                        <%= alert.severity %>
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center">
+                                                        <% if (alert.resolved) { %>
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <i class="fas fa-check-circle mr-1"></i>Resolved
+                                                            </span>
+                                                        <% } else if (alert.acknowledged) { %>
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                <i class="fas fa-user-check mr-1"></i>Acknowledged
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                                <i class="fas fa-clock mr-1"></i>Active
+                                                            </span>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm text-gray-500">
+                                                    <div class="whitespace-nowrap">
+                                                        <%= new Date(alert.createdAt).toLocaleDateString() %>
+                                                    </div>
+                                                    <div class="text-xs text-gray-400">
+                                                        <%= alert.timeAgo %>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex space-x-2">
+                                                        <% if (!alert.resolved) { %>
+                                                            <% if (!alert.acknowledged) { %>
+                                                                <button class="acknowledge-btn inline-flex items-center px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100" 
+                                                                        data-id="<%= alert._id %>">
+                                                                    <i class="fas fa-check-circle mr-1"></i>Acknowledge
+                                                                </button>
+                                                            <% } %>
+                                                            <button class="resolve-btn inline-flex items-center px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100" 
+                                                                    data-id="<%= alert._id %>">
+                                                                <i class="fas fa-check-double mr-1"></i>Resolve
+                                                            </button>
+                                                        <% } %>
+                                                        <button class="view-btn inline-flex items-center px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded hover:bg-gray-100" 
+                                                                data-id="<%= alert._id %>">
+                                                            <i class="fas fa-eye mr-1"></i>View
+                                                        </button>
+                                                        <% if (user.role === 'admin') { %>
+                                                            <button class="delete-btn inline-flex items-center px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100" 
+                                                                    data-id="<%= alert._id %>">
+                                                                <i class="fas fa-trash mr-1"></i>Delete
+                                                            </button>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="6" class="px-4 py-12 text-center text-gray-500">
+                                                <i class="fas fa-bell-slash text-4xl mb-3 text-gray-300"></i>
+                                                <p class="text-lg">No alerts found</p>
+                                                <p class="text-sm mt-1">Try adjusting your filters or create a new alert</p>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <% if (pagination) { %>
+                            <div class="mt-6 flex items-center justify-between">
+                                <div class="text-sm text-gray-700">
+                                    Showing <span class="font-medium"><%= pagination.startItem %></span> to 
+                                    <span class="font-medium"><%= pagination.endItem %></span> of 
+                                    <span class="font-medium"><%= pagination.total %></span> alerts
+                                </div>
+                                <div class="flex space-x-2">
+                                    <% if (pagination.prevPage) { %>
+                                        <a href="?<%= new URLSearchParams({...filters, page: pagination.prevPage }).toString() %>" 
+                                           class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            Previous
+                                        </a>
+                                    <% } %>
+                                    
+                                    <% if (pagination && pagination.pages && Array.isArray(pagination.pages)) { %>
+                                        <% pagination.pages.forEach(function(page) { %>
+                                            <a href="?<%= new URLSearchParams({...filters, page: page }).toString() %>" 
+                                               class="px-3 py-2 <%= page === pagination.currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' %> rounded-lg text-sm font-medium">
+                                                <%= page %>
+                                            </a>
+                                        <% }); %>
+                                    <% } %>
+                                    
+                                    <% if (pagination.nextPage) { %>
+                                        <a href="?<%= new URLSearchParams({...filters, page: pagination.nextPage }).toString() %>" 
+                                           class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            Next
+                                        </a>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Stats & Actions -->
+            <div class="space-y-6">
+                <!-- Alert Statistics -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Alert Statistics</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-4">
+                            <% if (stats && stats.bySeverity) { %>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Critical</span>
+                                        <span class="font-medium"><%= stats.bySeverity.critical || 0 %></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="progress-bar-critical bg-red-600 h-2 rounded-full" 
+                                        style="width: <%= (stats.bySeverity.critical || 0) / Math.max(stats.total, 1) * 100 %>%"></div>
+                                </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">High</span>
+                                        <span class="font-medium"><%= stats.bySeverity.high || 0 %></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="progress-bar-high bg-orange-500 h-2 rounded-full" 
+                                            style="width: <%= (stats.bySeverity.high || 0) / Math.max(stats.total, 1) * 100 %>%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Medium</span>
+                                        <span class="font-medium"><%= stats.bySeverity.medium || 0 %></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="progress-bar-medium bg-yellow-500 h-2 rounded-full" 
+                                            style="width: <%= (stats.bySeverity.medium || 0) / Math.max(stats.total, 1) * 100 %>%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Low</span>
+                                        <span class="font-medium"><%= stats.bySeverity.low || 0 %></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="progress-bar-low bg-blue-500 h-2 rounded-full" 
+                                            style="width: <%= (stats.bySeverity.low || 0) / Math.max(stats.total, 1) * 100 %>%"></div>
+                                    </div>
+                                </div>
+                            <% } %>
+                            
+                            <div class="pt-4 border-t">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-gray-800"><%= stats && stats.acknowledged ? stats.acknowledged : 0 %></div>
+                                        <div class="text-sm text-gray-600">Acknowledged</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-gray-800"><%= stats && stats.resolved ? stats.resolved : 0 %></div>
+                                        <div class="text-sm text-gray-600">Resolved</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Quick Actions</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <button id="acknowledgeAllActive" class="w-full flex items-center justify-between p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle mr-3"></i>
+                                    <span>Acknowledge All Active</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button id="resolveAllAcknowledged" class="w-full flex items-center justify-between p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-double mr-3"></i>
+                                    <span>Resolve All Acknowledged</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button id="sendTestAlert" class="w-full flex items-center justify-between p-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope mr-3"></i>
+                                    <span>Send Test Alert</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button id="viewTrends" class="w-full flex items-center justify-between p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-chart-line mr-3"></i>
+                                    <span>View Alert Trends</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alert Types Distribution -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Alert Types</h2>
+                    </div>
+                    <div class="p-4">
+                        <div class="h-48">
+                            <canvas id="alertTypesChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -42,5 +511,1270 @@
     </div>
 </main>
 
+<!-- Create Alert Modal -->
+<div id="createAlertModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Create New Alert</h3>
+        </div>
+        <form id="createAlertForm">
+            <div class="px-6 py-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Alert Type</label>
+                    <select name="type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select Type</option>
+                        <% Object.keys(alertTypes).forEach(function(type) { %>
+                            <option value="<%= alertTypes[type] %>"><%= alertTypes[type] %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Severity</label>
+                    <select name="severity" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select Severity</option>
+                        <% Object.keys(severityLevels).forEach(function(severity) { %>
+                            <option value="<%= severityLevels[severity] %>"><%= severityLevels[severity] %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <input type="text" name="title" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Enter alert title">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea name="message" required rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Enter alert message"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Device ID</label>
+                        <input type="text" name="deviceId" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="ESP32_SOLAR_01">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sensor Value</label>
+                        <input type="number" name="sensorValue" step="0.01"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="0.00">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <input type="text" name="location" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Kadidi Health Center">
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+                <button type="button" id="cancelCreateAlert" class="px-4 py-2 text-gray-700 hover:text-gray-900">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                    Create Alert
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Alert Details Modal -->
+<div id="alertDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <!-- Modal content will be loaded dynamically -->
+    </div>
+</div>
+
 <%- include('../partials/footer'); %>
 <%- include('../partials/scripts'); %>
+
+<script>
+    $(document).ready(function() {
+        // Initialize variables
+        let selectedAlerts = new Set();
+        
+        // DOM Elements
+        const createAlertBtn = $('#createAlertBtn');
+        const createAlertModal = $('#createAlertModal');
+        const cancelCreateAlert = $('#cancelCreateAlert');
+        const createAlertForm = $('#createAlertForm');
+        const bulkActionsBtn = $('#bulkActionsBtn');
+        const bulkActionsMenu = $('#bulkActionsMenu');
+        const selectAll = $('#selectAll');
+        const alertCheckboxes = $('.alert-checkbox');
+        const selectedCount = $('#selectedCount');
+        const refreshAlerts = $('#refreshAlerts');
+        const exportAlerts = $('#exportAlerts');
+        const toggleAdvancedFilters = $('#toggleAdvancedFilters');
+        const advancedFilters = $('#advancedFilters');
+        const statusFilter = $('#statusFilter');
+        const severityFilter = $('#severityFilter');
+        const typeFilter = $('#typeFilter');
+        const searchInput = $('#searchInput');
+        const dateFrom = $('#dateFrom');
+        const dateTo = $('#dateTo');
+        const deviceFilter = $('#deviceFilter');
+        const applyAdvancedFilters = $('#applyAdvancedFilters');
+        const resetFilters = $('#resetFilters');
+        const acknowledgeAllActive = $('#acknowledgeAllActive');
+        const resolveAllAcknowledged = $('#resolveAllAcknowledged');
+        const sendTestAlert = $('#sendTestAlert');
+        const viewTrends = $('#viewTrends');
+        const bulkActionBtns = $('.bulk-action-btn');
+        
+        // Initialize date pickers with default values
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        dateFrom.val(thirtyDaysAgo.toISOString().split('T')[0]);
+        dateTo.val(today.toISOString().split('T')[0]);
+        
+        // Initialize Chart
+        initAlertTypesChart();
+        
+        // Event Listeners
+        
+        // Create Alert Modal
+        createAlertBtn.click(() => createAlertModal.removeClass('hidden'));
+        cancelCreateAlert.click(() => createAlertModal.addClass('hidden'));
+        createAlertModal.click(function(e) {
+            if (e.target === this) createAlertModal.addClass('hidden');
+        });
+        
+        // Bulk Actions Dropdown
+        bulkActionsBtn.click(() => bulkActionsMenu.toggleClass('hidden'));
+        $(document).click(function(e) {
+            if (!$(e.target).closest('#bulkActionsDropdown').length) {
+                bulkActionsMenu.addClass('hidden');
+            }
+        });
+        
+        // Bulk Actions
+        bulkActionBtns.click(function() {
+            const action = $(this).data('action');
+            if (selectedAlerts.size === 0) {
+                showNotification('Please select at least one alert', 'warning');
+                return;
+            }
+            
+            if (action === 'acknowledge') {
+                bulkAcknowledgeAlerts();
+            } else if (action === 'resolve') {
+                bulkResolveAlerts();
+            } else if (action === 'delete') {
+                bulkDeleteAlerts();
+            }
+        });
+        
+        // Select All Checkbox
+        selectAll.change(function() {
+            const isChecked = $(this).prop('checked');
+            $('.alert-checkbox').prop('checked', isChecked);
+            updateSelectedCount();
+        });
+        
+        // Individual Checkboxes
+        $(document).on('change', '.alert-checkbox', updateSelectedCount);
+        
+        // Alert Actions
+        $(document).on('click', '.acknowledge-btn', function() {
+            const alertId = $(this).data('id');
+            acknowledgeAlert(alertId);
+        });
+        
+        $(document).on('click', '.resolve-btn', function() {
+            const alertId = $(this).data('id');
+            resolveAlert(alertId);
+        });
+        
+        $(document).on('click', '.view-btn', function() {
+            const alertId = $(this).data('id');
+            viewAlertDetails(alertId);
+        });
+        
+        $(document).on('click', '.delete-btn', function() {
+            const alertId = $(this).data('id');
+            deleteAlert(alertId);
+        });
+        
+        // Refresh Alerts
+        refreshAlerts.click(() => location.reload());
+        
+        // Export Alerts
+        // Replace the existing exportAlerts.click handler with this:
+exportAlerts.click(async function() {
+    try {
+        // Get current filter values
+        const params = new URLSearchParams();
+        
+        if (statusFilter.val()) params.set('status', statusFilter.val());
+        if (severityFilter.val()) params.set('severity', severityFilter.val());
+        if (typeFilter.val()) params.set('type', typeFilter.val());
+        if (dateFrom.val()) params.set('startDate', dateFrom.val());
+        if (dateTo.val()) params.set('endDate', dateTo.val());
+        if (deviceFilter.val()) params.set('deviceId', deviceFilter.val());
+        params.set('format', 'csv');
+        
+        // Show loading state
+        exportAlerts.html('<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...');
+        exportAlerts.prop('disabled', true);
+        
+        // Fetch and download CSV
+        const response = await fetch(`/api/alerts/export?${params.toString()}`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // Get filename from content-disposition header or generate one
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = 'alerts_export.csv';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Export completed successfully', 'success');
+        } else {
+            const error = await response.json();
+            throw new Error(error.message || 'Export failed');
+        }
+        
+    } catch (error) {
+        showNotification(`Export failed: ${error.message}`, 'error');
+        console.error('Export error:', error);
+    } finally {
+        // Reset button state
+        exportAlerts.html('<i class="fas fa-download mr-2"></i> Export');
+        exportAlerts.prop('disabled', false);
+    }
+});
+    
+
+// Add export dropdown functionality
+const exportBtn = $('#exportBtn');
+const exportMenu = $('#exportMenu');
+const exportOptions = $('.export-option');
+
+exportBtn.click(() => exportMenu.toggleClass('hidden'));
+$(document).click(function(e) {
+    if (!$(e.target).closest('#exportDropdown').length) {
+        exportMenu.addClass('hidden');
+    }
+});
+
+exportOptions.click(function() {
+    const format = $(this).data('format');
+    exportAlertsToFormat(format);
+});
+
+async function exportAlertsToFormat(format) {
+    try {
+        // Get current filter values
+        const params = new URLSearchParams();
+        
+        if (statusFilter.val()) params.set('status', statusFilter.val());
+        if (severityFilter.val()) params.set('severity', severityFilter.val());
+        if (typeFilter.val()) params.set('type', typeFilter.val());
+        if (dateFrom.val()) params.set('startDate', dateFrom.val());
+        if (dateTo.val()) params.set('endDate', dateTo.val());
+        if (deviceFilter.val()) params.set('deviceId', deviceFilter.val());
+        params.set('format', format);
+        
+        // Show loading state
+        exportBtn.html(`<i class="fas fa-spinner fa-spin mr-2"></i>Exporting ${format.toUpperCase()}...`);
+        exportBtn.prop('disabled', true);
+        exportMenu.addClass('hidden');
+        
+        // Fetch and download file
+        const response = await fetch(`/api/alerts/export?${params.toString()}`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // Get filename from content-disposition header or generate one
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = `alerts_export.${format}`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification(`${format.toUpperCase()} export completed`, 'success');
+        } else {
+            const error = await response.json();
+            throw new Error(error.message || 'Export failed');
+        }
+        
+    } catch (error) {
+        showNotification(`Export failed: ${error.message}`, 'error');
+        console.error('Export error:', error);
+    } finally {
+        // Reset button state
+        exportBtn.html('<i class="fas fa-download mr-2"></i> Export');
+        exportBtn.prop('disabled', false);
+    }
+}
+        // Toggle Advanced Filters
+        toggleAdvancedFilters.click(() => {
+            advancedFilters.toggleClass('hidden');
+            const icon = toggleAdvancedFilters.find('i.fa-chevron-down, i.fa-chevron-up');
+            if (advancedFilters.hasClass('hidden')) {
+                icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            } else {
+                icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            }
+        });
+        
+        // Filter Changes
+        statusFilter.change(applyFilters);
+        severityFilter.change(applyFilters);
+        typeFilter.change(applyFilters);
+        searchInput.on('keyup', debounce(applyFilters, 300));
+        
+        // Apply Advanced Filters
+        applyAdvancedFilters.click(applyAdvancedFiltering);
+        resetFilters.click(resetAllFilters);
+        
+        // Quick Actions
+        acknowledgeAllActive.click(acknowledgeAllActiveAlerts);
+        resolveAllAcknowledged.click(resolveAllAcknowledgedAlerts);
+        sendTestAlert.click(sendTestAlertEmail);
+        viewTrends.click(viewAlertTrends);
+        
+        // Form Submission
+        createAlertForm.submit(handleCreateAlert);
+        
+        // Initialize
+        updateSelectedCount();
+        
+        // Functions
+        
+        function updateSelectedCount() {
+            selectedAlerts.clear();
+            $('.alert-checkbox:checked').each(function() {
+                const alertId = $(this).closest('tr').data('alert-id');
+                selectedAlerts.add(alertId);
+            });
+            selectedCount.text(selectedAlerts.size);
+            selectAll.prop('checked', selectedAlerts.size === $('.alert-checkbox').length && selectedAlerts.size > 0);
+        }
+        
+        function applyFilters() {
+            const params = new URLSearchParams();
+            
+            if (statusFilter.val()) params.set('status', statusFilter.val());
+            if (severityFilter.val()) params.set('severity', severityFilter.val());
+            if (typeFilter.val()) params.set('type', typeFilter.val());
+            if (searchInput.val()) params.set('search', searchInput.val());
+            
+            window.location.href = '/alerts?' + params.toString();
+        }
+        
+        function applyAdvancedFiltering() {
+            const params = new URLSearchParams();
+            
+            if (statusFilter.val()) params.set('status', statusFilter.val());
+            if (severityFilter.val()) params.set('severity', severityFilter.val());
+            if (typeFilter.val()) params.set('type', typeFilter.val());
+            if (searchInput.val()) params.set('search', searchInput.val());
+            if (dateFrom.val()) params.set('startDate', dateFrom.val());
+            if (dateTo.val()) params.set('endDate', dateTo.val());
+            if (deviceFilter.val()) params.set('deviceId', deviceFilter.val());
+            
+            window.location.href = '/alerts?' + params.toString();
+        }
+        
+        function resetAllFilters() {
+            statusFilter.val('');
+            severityFilter.val('');
+            typeFilter.val('');
+            searchInput.val('');
+            dateFrom.val(thirtyDaysAgo.toISOString().split('T')[0]);
+            dateTo.val(today.toISOString().split('T')[0]);
+            deviceFilter.val('');
+            applyFilters();
+        }
+        
+        async function acknowledgeAlert(alertId) {
+            try {
+                const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: 'Acknowledged via web interface' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Alert acknowledged successfully', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(data.message || 'Failed to acknowledge alert', 'error');
+                }
+            } catch (error) {
+                showNotification('Error acknowledging alert', 'error');
+                console.error('Acknowledge alert error:', error);
+            }
+        }
+        
+        async function resolveAlert(alertId) {
+            try {
+                const response = await fetch(`/api/alerts/${alertId}/resolve`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: 'Resolved via web interface' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Alert resolved successfully', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(data.message || 'Failed to resolve alert', 'error');
+                }
+            } catch (error) {
+                showNotification('Error resolving alert', 'error');
+                console.error('Resolve alert error:', error);
+            }
+        }
+        
+        async function bulkAcknowledgeAlerts() {
+            if (selectedAlerts.size === 0) return;
+            
+            if (confirm(`Are you sure you want to acknowledge ${selectedAlerts.size} alert(s)?`)) {
+                try {
+                    const response = await fetch('/api/alerts/bulk-acknowledge', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ ids: Array.from(selectedAlerts) })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showNotification(`${data.modifiedCount} alerts acknowledged`, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification(data.message || 'Failed to acknowledge alerts', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error acknowledging alerts', 'error');
+                    console.error('Bulk acknowledge error:', error);
+                }
+            }
+        }
+        
+        async function bulkResolveAlerts() {
+            if (selectedAlerts.size === 0) return;
+            
+            if (confirm(`Are you sure you want to resolve ${selectedAlerts.size} alert(s)?`)) {
+                try {
+                    const response = await fetch('/api/alerts/bulk-resolve', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            ids: Array.from(selectedAlerts),
+                            notes: 'Bulk resolved via web interface'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showNotification(`${data.modifiedCount} alerts resolved`, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification(data.message || 'Failed to resolve alerts', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error resolving alerts', 'error');
+                    console.error('Bulk resolve error:', error);
+                }
+            }
+        }
+        
+        async function bulkDeleteAlerts() {
+            if (selectedAlerts.size === 0) return;
+            
+            if (confirm(`WARNING: This will permanently delete ${selectedAlerts.size} alert(s). This action cannot be undone.`)) {
+                try {
+                    const deletePromises = Array.from(selectedAlerts).map(id =>
+                        fetch(`/api/alerts/${id}`, {
+                            method: 'DELETE'
+                        }).then(res => res.json())
+                    );
+                    
+                    const results = await Promise.all(deletePromises);
+                    const successCount = results.filter(r => r.success).length;
+                    
+                    showNotification(`${successCount} alerts deleted`, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } catch (error) {
+                    showNotification('Error deleting alerts', 'error');
+                    console.error('Bulk delete error:', error);
+                }
+            }
+        }
+        
+        async function deleteAlert(alertId) {
+            if (confirm('Are you sure you want to delete this alert? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/api/alerts/${alertId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showNotification('Alert deleted successfully', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification(data.message || 'Failed to delete alert', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error deleting alert', 'error');
+                    console.error('Delete alert error:', error);
+                }
+            }
+        }
+        
+        async function viewAlertDetails(alertId) {
+            try {
+                const response = await fetch(`/api/alerts/${alertId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const alert = data.data;
+                    const modal = $('#alertDetailsModal');
+                    const modalContent = modal.find('.bg-white');
+                    
+                    modalContent.html(`
+                        <div class="px-6 py-4 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">Alert Details</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Title</label>
+                                    <p class="mt-1 text-gray-900 font-medium">${alert.title}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Type</label>
+                                    <p class="mt-1 text-gray-900">${alert.type}</p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">Message</label>
+                                <p class="mt-1 text-gray-900">${alert.message}</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Severity</label>
+                                    <span class="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        ${alert.severity === 'critical' ? 'bg-red-100 text-red-800' : 
+                                         alert.severity === 'high' ? 'bg-orange-100 text-orange-800' : 
+                                         alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                         'bg-blue-100 text-blue-800'}">
+                                        <i class="fas ${alert.severity === 'critical' ? 'fa-exclamation-triangle' : 
+                                                        alert.severity === 'high' ? 'fa-exclamation-circle' : 
+                                                        alert.severity === 'medium' ? 'fa-info-circle' : 
+                                                        'fa-info'} mr-1"></i>
+                                        ${alert.severity}
+                                    </span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Status</label>
+                                    <p class="mt-1">
+                                        ${alert.resolved ? 
+                                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Resolved</span>' : 
+                                            alert.acknowledged ? 
+                                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Acknowledged</span>' : 
+                                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Active</span>'}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Device ID</label>
+                                    <p class="mt-1 text-gray-900">${alert.deviceId || 'ESP32_SOLAR_01'}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Location</label>
+                                    <p class="mt-1 text-gray-900">${alert.location || 'Kadidi Health Center'}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Created At</label>
+                                    <p class="mt-1 text-gray-900">${new Date(alert.createdAt).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Last Updated</label>
+                                    <p class="mt-1 text-gray-900">${new Date(alert.updatedAt).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            
+                            ${alert.sensorValue ? `
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Sensor Data</label>
+                                    <p class="mt-1 text-gray-900">
+                                        Value: ${alert.sensorValue} ${alert.unit || ''}
+                                        ${alert.threshold ? `(Threshold: ${alert.threshold})` : ''}
+                                    </p>
+                                </div>
+                            ` : ''}
+                            
+                            ${alert.resolutionNotes ? `
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Resolution Notes</label>
+                                    <p class="mt-1 text-gray-900">${alert.resolutionNotes}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${alert.acknowledgedBy ? `
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Acknowledged By</label>
+                                    <p class="mt-1 text-gray-900">${alert.acknowledgedBy.name} on ${new Date(alert.acknowledgedAt).toLocaleString()}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${alert.resolvedBy ? `
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Resolved By</label>
+                                    <p class="mt-1 text-gray-900">${alert.resolvedBy.name} on ${new Date(alert.resolvedAt).toLocaleString()}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+                            ${!alert.resolved ? `
+                                ${!alert.acknowledged ? `
+                                    <button type="button" class="acknowledge-detail-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-id="${alert._id}">
+                                        Acknowledge
+                                    </button>
+                                ` : ''}
+                                <button type="button" class="resolve-detail-btn px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700" data-id="${alert._id}">
+                                    Resolve
+                                </button>
+                            ` : ''}
+                            <button type="button" class="close-detail-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                                Close
+                            </button>
+                        </div>
+                    `);
+                    
+                    modal.removeClass('hidden');
+                    
+                    // Add event listeners for modal buttons
+                    modal.find('.acknowledge-detail-btn').click(function() {
+                        const id = $(this).data('id');
+                        modal.addClass('hidden');
+                        acknowledgeAlert(id);
+                    });
+                    
+                    modal.find('.resolve-detail-btn').click(function() {
+                        const id = $(this).data('id');
+                        modal.addClass('hidden');
+                        resolveAlert(id);
+                    });
+                    
+                    modal.find('.close-detail-btn').click(() => modal.addClass('hidden'));
+                } else {
+                    showNotification('Failed to load alert details', 'error');
+                }
+            } catch (error) {
+                showNotification('Error loading alert details', 'error');
+                console.error('View alert details error:', error);
+            }
+        }
+        
+        async function handleCreateAlert(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/alerts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Alert created successfully', 'success');
+                    createAlertModal.addClass('hidden');
+                    createAlertForm[0].reset();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(result.message || 'Failed to create alert', 'error');
+                }
+            } catch (error) {
+                showNotification('Error creating alert', 'error');
+                console.error('Create alert error:', error);
+            }
+        }
+        
+       
+        async function acknowledgeAllActiveAlerts() {
+            try {
+                // Get all active alert IDs
+                const response = await fetch('/api/alerts?status=active&limit=1000');
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    const alertIds = data.data.map(alert => alert._id);
+                    
+                    if (confirm(`Are you sure you want to acknowledge all ${alertIds.length} active alerts?`)) {
+                        const bulkResponse = await fetch('/api/alerts/bulk-acknowledge', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ ids: alertIds })
+                        });
+                        
+                        const bulkData = await bulkResponse.json();
+                        
+                        if (bulkData.success) {
+                            showNotification(`${bulkData.modifiedCount} alerts acknowledged`, 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showNotification(bulkData.message || 'Failed to acknowledge alerts', 'error');
+                        }
+                    }
+                } else {
+                    showNotification('No active alerts to acknowledge', 'info');
+                }
+            } catch (error) {
+                showNotification('Error acknowledging all alerts', 'error');
+                console.error('Acknowledge all active error:', error);
+            }
+        }
+        
+        async function resolveAllAcknowledgedAlerts() {
+            try {
+                // Get all acknowledged but unresolved alert IDs
+                const response = await fetch('/api/alerts?status=acknowledged&limit=1000');
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    const alertIds = data.data.map(alert => alert._id);
+                    
+                    if (confirm(`Are you sure you want to resolve all ${alertIds.length} acknowledged alerts?`)) {
+                        const bulkResponse = await fetch('/api/alerts/bulk-resolve', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                ids: alertIds,
+                                notes: 'Bulk resolved all acknowledged alerts'
+                            })
+                        });
+                        
+                        const bulkData = await bulkResponse.json();
+                        
+                        if (bulkData.success) {
+                            showNotification(`${bulkData.modifiedCount} alerts resolved`, 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showNotification(bulkData.message || 'Failed to resolve alerts', 'error');
+                        }
+                    }
+                } else {
+                    showNotification('No acknowledged alerts to resolve', 'info');
+                }
+            } catch (error) {
+                showNotification('Error resolving all alerts', 'error');
+                console.error('Resolve all acknowledged error:', error);
+            }
+        }
+        
+        async function sendTestAlertEmail() {
+            try {
+                const response = await fetch('/api/alerts/test-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        severity: 'medium',
+                        email: '<%= user.email %>'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification(data.message || 'Failed to send test email', 'error');
+                }
+            } catch (error) {
+                showNotification('Error sending test email', 'error');
+                console.error('Send test email error:', error);
+            }
+        }
+        
+        function viewAlertTrends() {
+            // Open alert trends in a new tab or modal
+            window.open('/api/alerts/trends?days=30', '_blank');
+        }
+        
+        function initAlertTypesChart() {
+            const ctx = document.getElementById('alertTypesChart');
+            if (!ctx) return;
+            
+            // Sample data - in real implementation, fetch from API
+            // Build typeData object from EJS and assign to JS variable
+            const typeData = 
+                <% if (stats && stats.byType) { %>
+                    <%- JSON.stringify(stats.byType) %>
+                <% } else { %>
+                    {}
+                <% } %>;
+            
+            const labels = Object.keys(typeData);
+            const data = Object.values(typeData);
+            
+            new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#ef4444', // red
+                            '#f97316', // orange
+                            '#eab308', // yellow
+                            '#3b82f6', // blue
+                            '#8b5cf6', // purple
+                            '#10b981', // green
+                            '#6b7280'  // gray
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Utility Functions
+        
+        function showNotification(message, type = 'info') {
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+            
+            const icon = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            const notification = $(`
+                <div class="fixed top-4 right-4 z-50 animate-slide-in">
+                    <div class="${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
+                        <i class="fas ${icon[type]} mr-3"></i>
+                        <span>${message}</span>
+                    </div>
+                </div>
+            `);
+            
+            $('body').append(notification);
+            
+            setTimeout(() => {
+                notification.addClass('animate-slide-out');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Close modals with Escape key
+        $(document).keydown(function(e) {
+            if (e.key === 'Escape') {
+                createAlertModal.addClass('hidden');
+                $('#alertDetailsModal').addClass('hidden');
+            }
+        });
+    });
+
+    // WebSocket functionality
+let ws = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+const reconnectDelay = 3000;
+
+function initWebSocket() {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}`;
+    
+    ws = new WebSocket(wsUrl);
+    
+    ws.onopen = function() {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+        
+        // Subscribe to alerts channel
+        ws.send(JSON.stringify({
+            type: 'subscribe',
+            channel: 'alerts'
+        }));
+    };
+    
+    ws.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+        }
+    };
+    
+    ws.onclose = function(event) {
+        console.log('WebSocket disconnected:', event.code, event.reason);
+        
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            const delay = reconnectDelay * reconnectAttempts;
+            
+            console.log(`Reconnecting in ${delay/1000} seconds... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+            
+            setTimeout(() => {
+                initWebSocket();
+            }, delay);
+        } else {
+            console.error('Max reconnection attempts reached');
+        }
+    };
+    
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+}
+
+function handleWebSocketMessage(data) {
+    switch (data.type) {
+        case 'alert':
+            handleAlertUpdate(data);
+            break;
+            
+        case 'stats':
+            updateAlertStats(data.data);
+            break;
+            
+        case 'initial':
+            updateAlertStats(data.data);
+            break;
+            
+        case 'pong':
+            // Heartbeat response
+            break;
+            
+        default:
+            console.log('Unknown WebSocket message type:', data.type);
+    }
+}
+
+function handleAlertUpdate(data) {
+    const alert = data.data;
+    
+    // Show notification for new alerts
+    if (data.event === 'new') {
+        showNotification(`New ${alert.severity} alert: ${alert.title}`, 
+                       alert.severity === 'critical' ? 'error' : 
+                       alert.severity === 'high' ? 'warning' : 'info');
+        
+        // Update UI
+        updateAlertInTable(alert);
+    } else if (data.event === 'updated') {
+        updateAlertInTable(alert);
+    } else if (data.event === 'deleted') {
+        removeAlertFromTable(alert._id);
+    }
+}
+
+function updateAlertInTable(alert) {
+    const row = $(`tr[data-alert-id="${alert._id}"]`);
+    
+    if (row.length > 0) {
+        // Update existing row
+        row.find('.severity-badge').text(alert.severity)
+            .removeClass('bg-red-100 bg-orange-100 bg-yellow-100 bg-blue-100')
+            .addClass(getSeverityClass(alert.severity));
+        
+        if (alert.resolved) {
+            row.find('.status-badge').html('<i class="fas fa-check-circle mr-1"></i>Resolved')
+                .removeClass('bg-yellow-100 bg-blue-100')
+                .addClass('bg-green-100 text-green-800');
+        } else if (alert.acknowledged) {
+            row.find('.status-badge').html('<i class="fas fa-user-check mr-1"></i>Acknowledged')
+                .removeClass('bg-yellow-100')
+                .addClass('bg-blue-100 text-blue-800');
+        }
+    } else {
+        // Add new row at the top
+        addNewAlertToTable(alert);
+    }
+}
+
+function addNewAlertToTable(alert) {
+    const tableBody = $('#alertsTableBody');
+    
+    // Remove "no alerts" row if present
+    tableBody.find('td[colspan="6"]').closest('tr').remove();
+    
+    const newRow = `
+        <tr class="animate-pulse hover:bg-gray-50" data-alert-id="${alert._id}">
+            <td class="px-4 py-3">
+                <input type="checkbox" class="alert-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            </td>
+            <td class="px-4 py-3">
+                <div>
+                    <div class="font-medium text-gray-900">${alert.title}</div>
+                    <div class="text-sm text-gray-500">${alert.message}</div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        <i class="fas fa-microchip mr-1"></i>${alert.deviceId || 'ESP32_SOLAR_01'}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-map-marker-alt mr-1"></i>${alert.location || 'Kadidi Health Center'}
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3">
+                <span class="severity-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityClass(alert.severity)}">
+                    <i class="fas ${getSeverityIcon(alert.severity)} mr-1"></i>
+                    ${alert.severity}
+                </span>
+            </td>
+            <td class="px-4 py-3">
+                <div class="flex items-center">
+                    ${alert.resolved ? 
+                        '<span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i>Resolved</span>' : 
+                        alert.acknowledged ? 
+                        '<span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-user-check mr-1"></i>Acknowledged</span>' : 
+                        '<span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1"></i>Active</span>'}
+                </div>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-500">
+                <div class="whitespace-nowrap">
+                    ${new Date(alert.createdAt).toLocaleDateString()}
+                </div>
+                <div class="text-xs text-gray-400">
+                    ${formatTimeAgo(new Date(alert.createdAt))}
+                </div>
+            </td>
+            <td class="px-4 py-3">
+                <div class="flex space-x-2">
+                    ${!alert.resolved ? 
+                        (!alert.acknowledged ? 
+                            '<button class="acknowledge-btn inline-flex items-center px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100" data-id="' + alert._id + '"><i class="fas fa-check-circle mr-1"></i>Acknowledge</button>' : 
+                            ''
+                        ) + 
+                        '<button class="resolve-btn inline-flex items-center px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100" data-id="' + alert._id + '"><i class="fas fa-check-double mr-1"></i>Resolve</button>' : 
+                        ''
+                    }
+                    <button class="view-btn inline-flex items-center px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded hover:bg-gray-100" data-id="${alert._id}">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </button>
+                    ${'<%= user.role %>' === 'admin' ? 
+                        '<button class="delete-btn inline-flex items-center px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100" data-id="' + alert._id + '"><i class="fas fa-trash mr-1"></i>Delete</button>' : 
+                        ''}
+                </div>
+            </td>
+        </tr>
+    `;
+    
+    tableBody.prepend(newRow);
+    
+    // Remove animation after 2 seconds
+    setTimeout(() => {
+        $(`tr[data-alert-id="${alert._id}"]`).removeClass('animate-pulse');
+    }, 2000);
+}
+
+function removeAlertFromTable(alertId) {
+    $(`tr[data-alert-id="${alertId}"]`).fadeOut(300, function() {
+        $(this).remove();
+        
+        // If no rows left, show "no alerts" message
+        if ($('#alertsTableBody tr').length === 0) {
+            const noAlertsRow = `
+                <tr>
+                    <td colspan="6" class="px-4 py-12 text-center text-gray-500">
+                        <i class="fas fa-bell-slash text-4xl mb-3 text-gray-300"></i>
+                        <p class="text-lg">No alerts found</p>
+                        <p class="text-sm mt-1">Try adjusting your filters or create a new alert</p>
+                    </td>
+                </tr>
+            `;
+            $('#alertsTableBody').append(noAlertsRow);
+        }
+    });
+}
+
+function updateAlertStats(stats) {
+    // Update summary cards
+    $('#criticalCount').text(stats.severityCounts?.critical || 0);
+    $('#highCount').text(stats.severityCounts?.high || 0);
+    $('#activeCount').text(stats.activeAlerts || 0);
+    $('#sidebarAlertsCount').text(stats.activeAlerts || 0);
+    
+    // Update progress bars
+    updateProgressBars(stats);
+}
+
+function updateProgressBars(stats) {
+    const total = stats.activeAlerts || 1; // Avoid division by zero
+    
+    // Update progress bar widths
+    $('.progress-bar-critical').css('width', 
+        ((stats.severityCounts?.critical || 0) / total * 100) + '%');
+    $('.progress-bar-high').css('width', 
+        ((stats.severityCounts?.high || 0) / total * 100) + '%');
+    $('.progress-bar-medium').css('width', 
+        ((stats.severityCounts?.medium || 0) / total * 100) + '%');
+    $('.progress-bar-low').css('width', 
+        ((stats.severityCounts?.low || 0) / total * 100) + '%');
+}
+
+function getSeverityClass(severity) {
+    switch (severity) {
+        case 'critical': return 'bg-red-100 text-red-800';
+        case 'high': return 'bg-orange-100 text-orange-800';
+        case 'medium': return 'bg-yellow-100 text-yellow-800';
+        case 'low': return 'bg-blue-100 text-blue-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function getSeverityIcon(severity) {
+    switch (severity) {
+        case 'critical': return 'fa-exclamation-triangle';
+        case 'high': return 'fa-exclamation-circle';
+        case 'medium': return 'fa-info-circle';
+        case 'low': return 'fa-info';
+        default: return 'fa-bell';
+    }
+}
+
+function formatTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+    if (seconds < 2592000) return Math.floor(seconds / 86400) + ' days ago';
+    if (seconds < 31536000) return Math.floor(seconds / 2592000) + ' months ago';
+    return Math.floor(seconds / 31536000) + ' years ago';
+}
+
+</script>
+
+<style>
+    @keyframes slide-in {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slide-out {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .animate-slide-in {
+        animation: slide-in 0.3s ease-out;
+    }
+    
+    .animate-slide-out {
+        animation: slide-out 0.3s ease-out;
+    }
+</style>

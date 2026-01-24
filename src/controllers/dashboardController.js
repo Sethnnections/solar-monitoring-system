@@ -5,60 +5,44 @@ const { USER_ROLES } = require('../config/constants');
 
 class DashboardController {
     // Render main dashboard
-    static async renderDashboard(req, res) {
-        try {
-            // Get latest sensor data
-            const latestData = await SensorData.getLatest();
-            
-            // Get recent alerts
-            const recentAlerts = await Alert.find({ resolved: false })
-                .sort({ createdAt: -1 })
-                .limit(10)
-                .populate('acknowledgedBy', 'name')
-                .populate('resolvedBy', 'name');
-            
-            // Get system status
-            const systemStatus = await SensorData.getSystemStatus();
-            
-            // Get alert statistics
-            const alertStats = await Alert.getStatistics(7); // Last 7 days
-            
-            // Get daily summary for today
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dailySummary = await SensorData.getDailySummary(today);
-            
-            res.render('pages/dashboard', {
-                title: 'Dashboard - Solar Monitoring System',
-                user: req.session.user,
-                latestData,
-                recentAlerts,
-                systemStatus,
-                alertStats,
-                dailySummary,
-                helpers: Helpers,
-                currentTime: new Date().toLocaleTimeString(),
-                success: null,
-                error: null
-            });
-            
-        } catch (error) {
-            console.error('Render dashboard error:', error);
-            res.status(500).render('pages/dashboard', {
-                title: 'Dashboard - Solar Monitoring System',
-                user: req.session.user,
-                latestData: null,
-                recentAlerts: [],
-                systemStatus: { status: 'error', message: 'Failed to load system data' },
-                alertStats: null,
-                dailySummary: null,
-                helpers: Helpers,
-                currentTime: new Date().toLocaleTimeString(),
-                success: null,
-                error: 'Failed to load dashboard data'
-            });
-        }
+    // In renderDashboard method
+static async renderDashboard(req, res) {
+    try {
+        // Get page-specific data (middleware already provides common data)
+        const recentAlerts = await Alert.find({ resolved: false })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate('acknowledgedBy', 'name')
+            .populate('resolvedBy', 'name');
+        
+        const dailySummary = await SensorData.getDailySummary(new Date());
+        
+        res.render('pages/dashboard', {
+            title: 'Dashboard - Solar Monitoring System',
+            user: req.session.user,
+            recentAlerts,  // Page-specific recent alerts (more than middleware)
+            dailySummary,  // Page-specific daily summary
+            helpers: Helpers,
+            currentTime: new Date().toLocaleTimeString(),
+            success: null,
+            error: null
+            // Note: latestData, systemStatus, alertStats are from middleware
+        });
+        
+    } catch (error) {
+        console.error('Render dashboard error:', error);
+        res.status(500).render('pages/dashboard', {
+            title: 'Dashboard - Solar Monitoring System',
+            user: req.session.user,
+            recentAlerts: [],
+            dailySummary: null,
+            helpers: Helpers,
+            currentTime: new Date().toLocaleTimeString(),
+            success: null,
+            error: 'Failed to load dashboard data'
+        });
     }
+}
     
     // Get real-time data (API)
     static async getRealtimeData(req, res) {

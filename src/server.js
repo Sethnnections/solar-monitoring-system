@@ -57,6 +57,12 @@ app.use(checkSessionTimeout);
 app.use(flash());
 app.use(addUserToLocals);
 
+const addCommonLocals = require('./middlewares/localsMiddleware');
+app.use(addCommonLocals); 
+
+const commonDataMiddleware = require('./middlewares/commonDataMiddleware');
+app.use(commonDataMiddleware);
+
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -83,19 +89,28 @@ app.use(notFoundHandler);
 // Error handler (should be last middleware)
 app.use(errorHandler);
 
+
+
 // Add this middleware before your routes
 app.use((req, res, next) => {
     res.locals.currentPath = req.path;
     next();
 });
 // Start server
+const WebSocket = require('ws');
+
+// Add after creating the express server
 const server = app.listen(PORT, () => {
     console.log(` Server running on port ${PORT}`);
     console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(` Access at: http://localhost:${PORT}`);
     console.log(` API Documentation: http://localhost:${PORT}/api/docs`);
+    console.log(` WebSocket available at: ws://localhost:${PORT}`);
 });
 
+// Initialize WebSocket server
+const WebSocketServer = require('./utils/websocket');
+const wss = new WebSocketServer(server);
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
     console.error(' Unhandled Promise Rejection:', err);
@@ -117,5 +132,7 @@ process.on('SIGTERM', () => {
         process.exit(0);
     });
 });
+
+
 
 module.exports = app;

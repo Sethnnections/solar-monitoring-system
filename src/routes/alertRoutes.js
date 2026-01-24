@@ -85,4 +85,17 @@ router.get('/api/alerts/trends',
     AlertController.getAlertTrends
 );
 
+router.get('/api/alerts/export',
+    [
+        queryValidators.status,
+        queryValidators.severity,
+        queryValidators.type,
+        queryValidators.startDate,
+        queryValidators.endDate,
+        queryValidators.format
+    ],
+    validate,
+    AlertController.exportAlerts 
+);
+
 module.exports = router;

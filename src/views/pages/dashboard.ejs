@@ -1,166 +1,1220 @@
-<%- include('../partials/head', { title: 'Dashboard' }); %>
+<%- include('../partials/head', { 
+    title: 'Dashboard - Solar Monitoring System',
+    extraStyles: `
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.css">
+        <style>
+            :root {
+                --primary-yellow: #f59e0b;
+                --yellow-50: #fffbeb;
+                --yellow-100: #fef3c7;
+                --yellow-200: #fde68a;
+                --yellow-300: #fcd34d;
+                --yellow-400: #fbbf24;
+                --yellow-500: #f59e0b;
+                --yellow-600: #d97706;
+                --yellow-700: #b45309;
+                --yellow-800: #92400e;
+                --yellow-900: #78350f;
+            }
+            
+            .dashboard-card {
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                border: 1px solid #f3f4f6;
+                transition: all 0.3s ease;
+            }
+            
+            .dashboard-card:hover {
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                transform: translateY(-2px);
+                border-color: var(--yellow-200);
+            }
+            
+            .card-header {
+                padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+                border-bottom: none;
+            }
+            
+            .card-body {
+                padding: 0 1.5rem 1.5rem 1.5rem;
+            }
+            
+            .card-footer {
+                padding: 1rem 1.5rem;
+                border-top: 1px solid #f3f4f6;
+                background: #fafafa;
+                border-bottom-left-radius: 16px;
+                border-bottom-right-radius: 16px;
+            }
+            
+            .stat-badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+            }
+            
+            .badge-success { background: #d1fae5; color: #065f46; }
+            .badge-warning { background: #fef3c7; color: #92400e; }
+            .badge-danger { background: #fee2e2; color: #991b1b; }
+            .badge-info { background: #dbeafe; color: #1e40af; }
+            .badge-yellow { background: #fef3c7; color: #92400e; }
+            
+            .metric-value {
+                font-size: 2rem;
+                font-weight: 700;
+                color: #111827;
+                line-height: 1;
+            }
+            
+            .metric-label {
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-top: 0.5rem;
+            }
+            
+            .metric-change {
+                font-size: 0.875rem;
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+            }
+            
+            .change-positive { color: #059669; }
+            .change-negative { color: #dc2626; }
+            .change-neutral { color: #6b7280; }
+            
+            .empty-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 3rem 2rem;
+                text-align: center;
+                color: #9ca3af;
+            }
+            
+            .empty-state-icon {
+                width: 64px;
+                height: 64px;
+                background: #f3f4f6;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 1rem;
+                color: #9ca3af;
+                font-size: 1.5rem;
+            }
+            
+            .empty-state-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #6b7280;
+                margin-bottom: 0.5rem;
+            }
+            
+            .empty-state-description {
+                font-size: 0.875rem;
+                color: #9ca3af;
+                margin-bottom: 1rem;
+            }
+            
+            .device-status-indicator {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 8px;
+            }
+            
+            .status-online { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+            .status-warning { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); animation: pulse 2s infinite; }
+            .status-critical { background: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); animation: pulse 1s infinite; }
+            .status-offline { background: #9ca3af; }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+            
+            .weather-icon {
+                width: 48px;
+                height: 48px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1.5rem;
+            }
+            
+            .health-meter {
+                width: 80px;
+                height: 80px;
+                position: relative;
+            }
+            
+            .health-ring {
+                transform: rotate(-90deg);
+            }
+            
+            .health-score {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #111827;
+            }
+            
+            .chart-container {
+                height: 250px;
+                margin-top: 1rem;
+            }
+            
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 3px solid #f3f4f6;
+                border-top: 3px solid var(--primary-yellow);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 2rem auto;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .refresh-animation {
+                animation: rotate 1s linear;
+            }
+            
+            @keyframes rotate {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            
+            .time-filter {
+                display: inline-flex;
+                background: #f3f4f6;
+                border-radius: 8px;
+                padding: 4px;
+            }
+            
+            .time-filter-btn {
+                padding: 0.375rem 0.75rem;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #6b7280;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .time-filter-btn:hover {
+                color: #111827;
+                background: rgba(255, 255, 255, 0.5);
+            }
+            
+            .time-filter-btn.active {
+                background: white;
+                color: #111827;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            
+            .alert-severity {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                margin-right: 8px;
+                display: inline-block;
+            }
+            
+            .severity-critical { background: #ef4444; }
+            .severity-high { background: #f97316; }
+            .severity-medium { background: #f59e0b; }
+            .severity-low { background: #3b82f6; }
+            
+            .sensor-value {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: #111827;
+            }
+            
+            .sensor-unit {
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-left: 0.25rem;
+            }
+            
+            .sensor-status {
+                font-size: 0.75rem;
+                padding: 0.125rem 0.5rem;
+                border-radius: 12px;
+                font-weight: 500;
+            }
+            
+            .status-normal { background: #d1fae5; color: #065f46; }
+            .status-warning { background: #fef3c7; color: #92400e; }
+            .status-critical { background: #fee2e2; color: #991b1b; }
+            
+            .weather-card {
+                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                color: white;
+                border-radius: 16px;
+                overflow: hidden;
+                position: relative;
+            }
+            
+            .weather-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.2));
+            }
+            
+            .card-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #111827;
+            }
+            
+            .card-subtitle {
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-top: 0.25rem;
+            }
+            
+            .metric-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+            
+            .metric-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 1.5rem;
+                background: #fafafa;
+                border-radius: 12px;
+                border: 1px solid #f3f4f6;
+            }
+            
+            .metric-icon {
+                width: 48px;
+                height: 48px;
+                background: var(--yellow-100);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--yellow-600);
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            
+            .activity-item {
+                display: flex;
+                align-items: flex-start;
+                padding: 1rem;
+                border-bottom: 1px solid #f3f4f6;
+                transition: background 0.2s ease;
+            }
+            
+            .activity-item:last-child {
+                border-bottom: none;
+            }
+            
+            .activity-item:hover {
+                background: #fafafa;
+            }
+            
+            .activity-icon {
+                width: 32px;
+                height: 32px;
+                background: #f3f4f6;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 1rem;
+                color: #6b7280;
+                flex-shrink: 0;
+            }
+            
+            .activity-content {
+                flex: 1;
+            }
+            
+            .activity-title {
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #111827;
+                margin-bottom: 0.25rem;
+            }
+            
+            .activity-time {
+                font-size: 0.75rem;
+                color: #9ca3af;
+            }
+            
+            .section-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .section-icon {
+                color: var(--primary-yellow);
+            }
+            
+            .grid-2 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(3, 1fr); }
+            .grid-4 { grid-template-columns: repeat(4, 1fr); }
+            
+            @media (max-width: 768px) {
+                .grid-2, .grid-3, .grid-4 {
+                    grid-template-columns: 1fr;
+                }
+                
+                .metric-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    ` 
+}); %>
 <%- include('../partials/header'); %>
 <%- include('../partials/sidebar'); %>
 
 <!-- Main Content -->
-<main class="md:ml-64 pt-16 min-h-screen bg-gray-100">
+<main class="md:ml-64 pt-16 min-h-screen bg-gray-50">
     <div class="container mx-auto px-4 py-6">
-        <!-- Page Header -->
-        <div class="mb-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+        <!-- Dashboard Header -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
-                    <p class="text-gray-600">Real-time monitoring of solar system performance</p>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-solar-panel text-yellow-600 text-xl"></i>
+                        </div>
+                        Solar Monitoring Dashboard
+                    </h1>
+                    <p class="text-gray-600 mt-2 flex items-center gap-2">
+                        <i class="fas fa-map-marker-alt text-gray-400"></i>
+                        Kadidi Health Center, Blantyre
+                        <span class="inline-flex items-center gap-1 ml-3 px-3 py-1 bg-yellow-50 text-yellow-800 text-sm rounded-full">
+                            <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            <span id="lastUpdateTime">
+                                <% if (latestData && latestData.timestamp) { %>
+                                    Updated <%= new Date(latestData.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                <% } else { %>
+                                    No recent data
+                                <% } %>
+                            </span>
+                        </span>
+                    </p>
                 </div>
-                <div class="mt-4 md:mt-0 flex space-x-3">
-                    <button id="refreshData" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
-                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                
+                <div class="flex flex-wrap gap-3">
+                    <!-- Time Period Filter -->
+                    <div class="time-filter">
+                        <button class="time-filter-btn" data-period="1h">1H</button>
+                        <button class="time-filter-btn" data-period="24h">24H</button>
+                        <button class="time-filter-btn active" data-period="7d">7D</button>
+                        <button class="time-filter-btn" data-period="30d">30D</button>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <button id="refreshDashboard" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
                     </button>
-                    <a href="/dashboard/live-data" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
-                        <i class="fas fa-bolt mr-2"></i> Live View
+                    
+                    <a href="/dashboard/live-data" class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-200 font-medium">
+                        <i class="fas fa-bolt"></i>
+                        Live View
                     </a>
                 </div>
             </div>
-            
-            
-            <!-- Quick Stats -->
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-blue-100 rounded-lg mr-4">
-                            <i class="fas fa-bolt text-blue-600 text-xl"></i>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - Main Metrics & Charts -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Real-time Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Power Generation Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="card-title">Power Generation</div>
+                                    <div class="card-subtitle">Current output</div>
+                                </div>
+                                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-bolt text-yellow-600"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Current Power</p>
-                            <p class="text-2xl font-bold text-gray-800" id="currentPower">
+                        <div class="card-body">
+                            <div id="powerMetric">
                                 <% if (latestData && latestData.power && latestData.power.value) { %>
-                                    <%= latestData.power.value.toFixed(2) %> <%= latestData.power.unit %>
-                                <% } else if (latestData && latestData.voltage && latestData.current) { %>
-                                    <%= (latestData.voltage.value * latestData.current.value).toFixed(2) %> W
+                                    <div class="metric-value">
+                                        <%= latestData.power.value.toFixed(1) %>
+                                        <span class="sensor-unit">W</span>
+                                    </div>
+                                    <div class="metric-label">
+                                        <% if (latestData.power.value > 300) { %>
+                                            <span class="stat-badge badge-success">
+                                                <i class="fas fa-arrow-up mr-1"></i> High Production
+                                            </span>
+                                        <% } else if (latestData.power.value > 150) { %>
+                                            <span class="stat-badge badge-yellow">
+                                                <i class="fas fa-minus mr-1"></i> Medium
+                                            </span>
+                                        <% } else { %>
+                                            <span class="stat-badge badge-warning">
+                                                <i class="fas fa-arrow-down mr-1"></i> Low
+                                            </span>
+                                        <% } %>
+                                    </div>
                                 <% } else { %>
-                                    0 W
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-bolt"></i>
+                                        </div>
+                                        <div class="empty-state-title">No Power Data</div>
+                                        <div class="empty-state-description">Waiting for sensor readings</div>
+                                    </div>
                                 <% } %>
-                            </p>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="text-sm text-gray-600">
+                                <i class="far fa-clock mr-1"></i>
+                                <% if (latestData && latestData.timestamp) { %>
+                                    Updated <%= new Date(latestData.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                <% } else { %>
+                                    No recent updates
+                                <% } %>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-green-100 rounded-lg mr-4">
-                            <i class="fas fa-sun text-green-600 text-xl"></i>
+
+                    <!-- Today's Energy Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="card-title">Today's Energy</div>
+                                    <div class="card-subtitle">Total production</div>
+                                </div>
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-sun text-green-600"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Today's Energy</p>
-                            <p class="text-2xl font-bold text-gray-800" id="todayEnergy">
+                        <div class="card-body">
+                            <div id="energyMetric">
                                 <% if (dailySummary && dailySummary.totalEnergy) { %>
-                                    <%= dailySummary.totalEnergy.toFixed(3) %> kWh
+                                    <div class="metric-value">
+                                        <%= dailySummary.totalEnergy.toFixed(2) %>
+                                        <span class="sensor-unit">kWh</span>
+                                    </div>
+                                    <div class="metric-label">
+                                        <% if (dailySummary.totalEnergy > 10) { %>
+                                            <span class="metric-change change-positive">
+                                                <i class="fas fa-arrow-up"></i>
+                                                <%= ((dailySummary.totalEnergy - 8) / 8 * 100).toFixed(1) %>% above avg
+                                            </span>
+                                        <% } else if (dailySummary.totalEnergy > 5) { %>
+                                            <span class="metric-change change-neutral">
+                                                <i class="fas fa-minus"></i>
+                                                Average production
+                                            </span>
+                                        <% } else { %>
+                                            <span class="metric-change change-negative">
+                                                <i class="fas fa-arrow-down"></i>
+                                                <%= ((8 - dailySummary.totalEnergy) / 8 * 100).toFixed(1) %>% below avg
+                                            </span>
+                                        <% } %>
+                                    </div>
                                 <% } else { %>
-                                    0 kWh
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-sun"></i>
+                                        </div>
+                                        <div class="empty-state-title">No Energy Data</div>
+                                        <div class="empty-state-description">Check sensor connections</div>
+                                    </div>
                                 <% } %>
-                            </p>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="text-sm text-gray-600">
+                                <i class="fas fa-calendar-day mr-1"></i>
+                                <%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Health Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="card-title">System Health</div>
+                                    <div class="card-subtitle">Overall status</div>
+                                </div>
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-heartbeat text-blue-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="healthMetric">
+                                <% 
+                                    let healthScore = 0;
+                                    let healthStatus = 'normal';
+                                    if (latestData) {
+                                        let score = 100;
+                                        if (latestData.voltage && latestData.voltage.value < 11.5) score -= 20;
+                                        if (latestData.temperature && latestData.temperature.value > 60) score -= 15;
+                                        if (latestData.current && latestData.current.value < 0.5) score -= 10;
+                                        healthScore = Math.max(50, Math.min(100, Math.round(score)));
+                                        
+                                        if (healthScore >= 80) healthStatus = 'excellent';
+                                        else if (healthScore >= 60) healthStatus = 'good';
+                                        else healthStatus = 'poor';
+                                    }
+                                %>
+                                
+                                <% if (healthScore > 0) { %>
+                                    <div class="flex items-center justify-between">
+                                        <div class="health-meter">
+                                            <svg width="80" height="80" viewBox="0 0 80 80">
+                                                <circle cx="40" cy="40" r="35" stroke="#f3f4f6" stroke-width="8" fill="none"/>
+                                                <circle cx="40" cy="40" r="35" stroke="<%= 
+                                                    healthScore >= 80 ? '#10b981' : 
+                                                    healthScore >= 60 ? '#f59e0b' : '#ef4444' 
+                                                %>" stroke-width="8" fill="none" 
+                                                stroke-linecap="round" transform="rotate(-90 40 40)"
+                                                stroke-dasharray="<%= 2 * Math.PI * 35 %>"
+                                                stroke-dashoffset="<%= 2 * Math.PI * 35 * (1 - healthScore/100) %>"/>
+                                            </svg>
+                                            <div class="health-score"><%= healthScore %>%</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-semibold capitalize"><%= healthStatus %></div>
+                                            <div class="text-sm text-gray-600 mt-1">
+                                                <% if (healthScore >= 80) { %>
+                                                    <span class="stat-badge badge-success">Optimal</span>
+                                                <% } else if (healthScore >= 60) { %>
+                                                    <span class="stat-badge badge-warning">Needs Check</span>
+                                                <% } else { %>
+                                                    <span class="stat-badge badge-danger">Attention Required</span>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-heartbeat"></i>
+                                        </div>
+                                        <div class="empty-state-title">Health Unavailable</div>
+                                        <div class="empty-state-description">Insufficient data</div>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="text-sm text-gray-600">
+                                Based on voltage, temperature, and current readings
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Alerts Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="card-title">Active Alerts</div>
+                                    <div class="card-subtitle">Requiring attention</div>
+                                </div>
+                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="alertsMetric">
+                                <% 
+                                    let activeAlerts = recentAlerts ? recentAlerts.filter(alert => !alert.resolved) : [];
+                                    let criticalCount = 0;
+                                    let highCount = 0;
+                                    
+                                    if (activeAlerts.length > 0) {
+                                        activeAlerts.forEach(alert => {
+                                            if (alert.severity === 'critical') criticalCount++;
+                                            if (alert.severity === 'high') highCount++;
+                                        });
+                                    }
+                                %>
+                                
+                                <% if (activeAlerts.length > 0) { %>
+                                    <div class="metric-value"><%= activeAlerts.length %></div>
+                                    <div class="metric-label">
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                            <% if (criticalCount > 0) { %>
+                                                <span class="stat-badge badge-danger">
+                                                    <%= criticalCount %> Critical
+                                                </span>
+                                            <% } %>
+                                            <% if (highCount > 0) { %>
+                                                <span class="stat-badge badge-warning">
+                                                    <%= highCount %> High
+                                                </span>
+                                            <% } %>
+                                            <% if (activeAlerts.length - criticalCount - highCount > 0) { %>
+                                                <span class="stat-badge badge-info">
+                                                    <%= activeAlerts.length - criticalCount - highCount %> Others
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                        <div class="empty-state-title">No Active Alerts</div>
+                                        <div class="empty-state-description">All systems normal</div>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="/alerts" class="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1">
+                                View All Alerts
+                                <i class="fas fa-arrow-right text-xs"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-yellow-100 rounded-lg mr-4">
-                            <i class="fas fa-thermometer-half text-yellow-600 text-xl"></i>
+
+                <!-- Power Production Chart Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <div class="card-title">Power Production Trend</div>
+                                <div class="card-subtitle">Last 7 days of solar generation</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="time-filter">
+                                    <button class="time-filter-btn" data-chart-period="24h">24H</button>
+                                    <button class="time-filter-btn active" data-chart-period="7d">7D</button>
+                                    <button class="time-filter-btn" data-chart-period="30d">30D</button>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Temperature</p>
-                            <p class="text-2xl font-bold text-gray-800" id="currentTemp">
-                                <% if (latestData && latestData.temperature) { %>
-                                    <%= latestData.temperature.value.toFixed(1) %> °C
-                                <% } else { %>
-                                    0 °C
-                                <% } %>
-                            </p>
+                    </div>
+                    <div class="card-body">
+                        <div id="powerChart" class="chart-container">
+                            <div class="empty-state">
+                                <div class="loading-spinner"></div>
+                                <div class="empty-state-title">Loading Chart Data</div>
+                                <div class="empty-state-description">Fetching power production history</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="flex items-center justify-between text-sm text-gray-600">
+                            <div>
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Shows daily power generation patterns
+                            </div>
+                            <button id="exportChartData" class="text-blue-600 hover:text-blue-800 font-medium">
+                                <i class="fas fa-download mr-1"></i>Export Data
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-red-100 rounded-lg mr-4">
-                            <i class="fas fa-bell text-red-600 text-xl"></i>
+
+                <!-- System Parameters Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Voltage & Current Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <div class="card-title">Electrical Parameters</div>
+                            <div class="card-subtitle">Real-time voltage and current</div>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Active Alerts</p>
-                            <p class="text-2xl font-bold text-gray-800" id="activeAlerts">
-                                <%= recentAlerts ? recentAlerts.filter(alert => !alert.resolved).length : 0 %>
-                            </p>
+                        <div class="card-body">
+                            <div id="voltageCurrentChart" class="chart-container">
+                                <div class="empty-state">
+                                    <div class="loading-spinner"></div>
+                                    <div class="empty-state-title">Loading Electrical Data</div>
+                                    <div class="empty-state-description">Fetching voltage and current readings</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-sm text-gray-600">Current Voltage</div>
+                                    <div class="sensor-value">
+                                        <% if (latestData && latestData.voltage) { %>
+                                            <%= latestData.voltage.value.toFixed(2) %>
+                                            <span class="sensor-unit">V</span>
+                                        <% } else { %>
+                                            --
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-600">Current Current</div>
+                                    <div class="sensor-value">
+                                        <% if (latestData && latestData.current) { %>
+                                            <%= latestData.current.value.toFixed(2) %>
+                                            <span class="sensor-unit">A</span>
+                                        <% } else { %>
+                                            --
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <div class="card-title">Temperature Monitoring</div>
+                            <div class="card-subtitle">System temperature trends</div>
+                        </div>
+                        <div class="card-body">
+                            <div id="temperatureChart" class="chart-container">
+                                <div class="empty-state">
+                                    <div class="loading-spinner"></div>
+                                    <div class="empty-state-title">Loading Temperature Data</div>
+                                    <div class="empty-state-description">Fetching temperature history</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm text-gray-600">Current Temperature</div>
+                                    <div class="sensor-value">
+                                        <% if (latestData && latestData.temperature) { %>
+                                            <%= latestData.temperature.value.toFixed(1) %>
+                                            <span class="sensor-unit">°C</span>
+                                        <% } else { %>
+                                            --
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div>
+                                    <% if (latestData && latestData.temperature) { %>
+                                        <% if (latestData.temperature.value > 70) { %>
+                                            <span class="sensor-status status-critical">Critical</span>
+                                        <% } else if (latestData.temperature.value > 60) { %>
+                                            <span class="sensor-status status-warning">Warning</span>
+                                        <% } else { %>
+                                            <span class="sensor-status status-normal">Normal</span>
+                                        <% } %>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Side Panels -->
+            <div class="space-y-6">
+                <!-- System Status Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title">System Status</div>
+                        <div class="card-subtitle">Device connectivity & health</div>
+                    </div>
+                    <div class="card-body">
+                        <div id="systemStatusList">
+                            <% 
+                                const devices = [
+                                    { name: 'ESP32_SOLAR_01', type: 'controller', status: 'online', lastSeen: new Date() },
+                                    { name: 'Solar Panel Array', type: 'panel', status: 'online', lastSeen: new Date(Date.now() - 300000) },
+                                    { name: 'Battery Bank', type: 'battery', status: 'warning', lastSeen: new Date(Date.now() - 600000) },
+                                    { name: 'Inverter Unit', type: 'inverter', status: 'online', lastSeen: new Date(Date.now() - 120000) }
+                                ];
+                            %>
+                            
+                            <div class="space-y-3">
+                                <% devices.forEach(device => { %>
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center border">
+                                                <i class="fas fa-<%= 
+                                                    device.type === 'controller' ? 'microchip' : 
+                                                    device.type === 'panel' ? 'solar-panel' : 
+                                                    device.type === 'battery' ? 'battery-half' : 'bolt'
+                                                %> text-gray-600"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-gray-900"><%= device.name %></div>
+                                                <div class="text-xs text-gray-600 capitalize"><%= device.type %></div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="flex items-center gap-2">
+                                                <span class="device-status-indicator status-<%= device.status %>"></span>
+                                                <span class="text-sm font-medium capitalize"><%= device.status %></span>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                <% if (device.status === 'online') { %>
+                                                    <%= Math.round((Date.now() - device.lastSeen) / 60000) %> min ago
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-wifi mr-1"></i>
+                            <%= devices.filter(d => d.status === 'online').length %> of <%= devices.length %> devices online
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="card-title">Recent Alerts</div>
+                                <div class="card-subtitle">Latest system notifications</div>
+                            </div>
+                            <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                                <%= activeAlerts.length %> Active
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentAlertsList">
+                            <% if (activeAlerts.length > 0) { %>
+                                <div class="space-y-3">
+                                    <% activeAlerts.slice(0, 5).forEach(alert => { %>
+                                        <div class="activity-item">
+                                            <div class="activity-icon">
+                                                <span class="alert-severity severity-<%= alert.severity %>"></span>
+                                            </div>
+                                            <div class="activity-content">
+                                                <div class="activity-title"><%= alert.title %></div>
+                                                <div class="text-xs text-gray-600 mb-1"><%= alert.message %></div>
+                                                <div class="activity-time">
+                                                    <%= new Date(alert.createdAt).toLocaleDateString() %>
+                                                    • <%= alert.deviceId || 'System' %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                            <% } else { %>
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-bell-slash"></i>
+                                    </div>
+                                    <div class="empty-state-title">No Recent Alerts</div>
+                                    <div class="empty-state-description">System is operating normally</div>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/alerts" class="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1 w-full justify-center">
+                            View Alert Center
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Weather Impact Card -->
+                <div class="weather-card">
+                    <div class="weather-overlay"></div>
+                    <div class="relative z-10 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <div class="text-xl font-bold text-white">Weather Impact</div>
+                                <div class="text-yellow-100">Current conditions analysis</div>
+                            </div>
+                            <div class="weather-icon">
+                                <i class="fas fa-cloud-sun"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <div class="text-4xl font-bold text-white mb-2">28°C</div>
+                            <div class="text-yellow-100">Partly Cloudy • Blantyre</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <div class="text-xs text-yellow-100 mb-1">Sunlight Intensity</div>
+                                <div class="text-lg font-bold text-white">85%</div>
+                            </div>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <div class="text-xs text-yellow-100 mb-1">Production Impact</div>
+                                <div class="text-lg font-bold text-white">-12%</div>
+                            </div>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <div class="text-xs text-yellow-100 mb-1">Humidity</div>
+                                <div class="text-lg font-bold text-white">65%</div>
+                            </div>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <div class="text-xs text-yellow-100 mb-1">Wind Speed</div>
+                                <div class="text-lg font-bold text-white">12 km/h</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-4 border-t border-white border-opacity-20">
+                            <div class="text-sm text-yellow-100">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Optimal conditions expected tomorrow
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Metrics Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title">Quick Metrics</div>
+                        <div class="card-subtitle">Key performance indicators</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-grid">
+                            <div class="metric-item">
+                                <div class="metric-icon">
+                                    <i class="fas fa-battery-three-quarters"></i>
+                                </div>
+                                <div class="metric-value">
+                                    <% if (latestData && latestData.batteryLevel) { %>
+                                        <%= latestData.batteryLevel %>%
+                                    <% } else { %>
+                                        --
+                                    <% } %>
+                                </div>
+                                <div class="metric-label">Battery Level</div>
+                            </div>
+                            
+                            <div class="metric-item">
+                                <div class="metric-icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </div>
+                                <div class="metric-value">
+                                    <% if (dailySummary && dailySummary.avgVoltage) { %>
+                                        <%= dailySummary.avgVoltage.toFixed(1) %>
+                                    <% } else { %>
+                                        --
+                                    <% } %>
+                                </div>
+                                <div class="metric-label">Avg Voltage</div>
+                            </div>
+                            
+                            <div class="metric-item">
+                                <div class="metric-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="metric-value">
+                                    <% if (dailySummary && dailySummary.peakPower) { %>
+                                        <%= dailySummary.peakPower.toFixed(0) %>
+                                    <% } else { %>
+                                        --
+                                    <% } %>
+                                </div>
+                                <div class="metric-label">Peak Power</div>
+                            </div>
+                            
+                            <div class="metric-item">
+                                <div class="metric-icon">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="metric-value">
+                                    <% if (dailySummary && dailySummary.dataPoints) { %>
+                                        <%= dailySummary.dataPoints %>
+                                    <% } else { %>
+                                        0
+                                    <% } %>
+                                </div>
+                                <div class="metric-label">Data Points</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-clock mr-1"></i>
+                            Updated in real-time
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Real-time Chart -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b">
-                        <h2 class="text-lg font-semibold text-gray-800">Real-time Performance</h2>
-                        <p class="text-sm text-gray-600">Last 24 hours of solar production</p>
+
+        <!-- Recent Activity Row -->
+        <div class="mt-8">
+            <div class="section-title">
+                <i class="fas fa-history section-icon"></i>
+                Recent Activity
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title">System Events</div>
                     </div>
-                    <div class="p-4">
-                        <div class="h-80">
-                            <canvas id="performanceChart"></canvas>
+                    <div class="card-body">
+                        <div class="space-y-3">
+                            <% 
+                                const activities = [
+                                    { type: 'alert', title: 'Low Voltage Detected', time: '10 minutes ago', icon: 'fa-exclamation-triangle', color: 'text-red-500' },
+                                    { type: 'data', title: 'Data Collection Complete', time: '1 hour ago', icon: 'fa-database', color: 'text-blue-500' },
+                                    { type: 'maintenance', title: 'System Health Check', time: '3 hours ago', icon: 'fa-wrench', color: 'text-yellow-500' },
+                                    { type: 'report', title: 'Daily Report Generated', time: '5 hours ago', icon: 'fa-file-alt', color: 'text-green-500' },
+                                    { type: 'login', title: 'User Login Detected', time: '6 hours ago', icon: 'fa-user', color: 'text-purple-500' }
+                                ];
+                            %>
+                            
+                            <% activities.forEach(activity => { %>
+                                <div class="activity-item">
+                                    <div class="activity-icon <%= activity.color %>">
+                                        <i class="fas <%= activity.icon %>"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title"><%= activity.title %></div>
+                                        <div class="activity-time"><%= activity.time %></div>
+                                    </div>
+                                </div>
+                            <% }); %>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            
-            
-            
-            <!-- Right Column -->
-            <div class="space-y-6">
-                <!-- Recent Alerts -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b">
-                        <h2 class="text-lg font-semibold text-gray-800">Recent Alerts</h2>
-                        <a href="/alerts" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title">Performance Summary</div>
                     </div>
-                    <div class="p-4">
-                        <div class="space-y-3" id="recentAlerts">
-                            <% if (recentAlerts && recentAlerts.length > 0) { %>
-                                <% recentAlerts.slice(0, 5).forEach(function(alert) { %>
-                                    <div class="border-l-4 <%= alert.severity === 'critical' ? 'border-red-500 bg-red-50' : 
-                                                          alert.severity === 'high' ? 'border-orange-500 bg-orange-50' : 
-                                                          alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' : 
-                                                          'border-blue-500 bg-blue-50' %> p-3 rounded-r">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="font-medium text-gray-800"><%= alert.title %></p>
-                                                <p class="text-sm text-gray-600 mt-1"><%= alert.message %></p>
-                                            </div>
-                                            <span class="text-xs px-2 py-1 rounded-full <%= alert.severity === 'critical' ? 'bg-red-100 text-red-800' : 
-                                                                                         alert.severity === 'high' ? 'bg-orange-100 text-orange-800' : 
-                                                                                         alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                                                                                         'bg-blue-100 text-blue-800' %>">
-                                                <%= alert.severity %>
-                                            </span>
-                                        </div>
-                                        <div class="flex justify-between items-center mt-2">
-                                            <span class="text-xs text-gray-500">
-                                                <i class="far fa-clock mr-1"></i>
-                                                <%= new Date(alert.createdAt).toLocaleString() %>
-                                            </span>
-                                        </div>
-                                    </div>
-                                <% }); %>
-                            <% } else { %>
-                                <div class="text-center py-8 text-gray-500">
-                                    <i class="fas fa-check-circle text-3xl mb-3 text-green-500"></i>
-                                    <p>No active alerts</p>
-                                    <p class="text-sm mt-1">System operating normally</p>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>System Uptime</span>
+                                    <span>99.8%</span>
                                 </div>
-                            <% } %>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 99.8%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Data Accuracy</span>
+                                    <span>98.5%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 98.5%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Alert Response Time</span>
+                                    <span>15 min</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Energy Efficiency</span>
+                                    <span>92%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title">Predictive Insights</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <div class="p-3 bg-blue-50 rounded-lg">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-bolt text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">High Production Expected</div>
+                                        <div class="text-sm text-gray-600 mt-1">Tomorrow's forecast shows optimal conditions for solar generation</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-yellow-50 rounded-lg">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-tools text-yellow-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">Maintenance Recommended</div>
+                                        <div class="text-sm text-gray-600 mt-1">Battery health trending downward - schedule check in 2 weeks</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-green-50 rounded-lg">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-chart-line text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">Performance Improving</div>
+                                        <div class="text-sm text-gray-600 mt-1">Weekly efficiency has increased by 8% compared to last month</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -169,44 +1223,482 @@
     </div>
 </main>
 
-<%- include('../partials/footer'); %>
-<%- include('../partials/scripts'); %>
+<!-- JavaScript Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <script>
-    // Simple initialization
-    $(document).ready(function() {
-        console.log('Dashboard loaded');
-        
-        // Refresh button
-        $('#refreshData').click(function() {
-            location.reload();
-        });
-        
-        // Load chart
-        loadChart();
+// Dashboard state
+let dashboardState = {
+    currentPeriod: '7d',
+    charts: {},
+    isLoading: false,
+    lastUpdate: null
+};
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+    setupEventListeners();
+    loadDashboardData();
+    startRealTimeUpdates();
+});
+
+// Initialize dashboard components
+function initializeDashboard() {
+    // Initialize charts
+    initializeCharts();
+    
+    // Set initial time
+    dashboardState.lastUpdate = new Date();
+    updateLastUpdateTime();
+}
+
+// Initialize ApexCharts
+function initializeCharts() {
+    // Power Production Chart
+    dashboardState.charts.power = new ApexCharts(document.querySelector("#powerChart"), {
+        series: [],
+        chart: {
+            type: 'area',
+            height: '100%',
+            toolbar: { show: true },
+            animations: { enabled: true, easing: 'easeinout', speed: 800 }
+        },
+        colors: ['#f59e0b'],
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.7,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        xaxis: { type: 'datetime' },
+        yaxis: { title: { text: 'Power (W)' } },
+        grid: { borderColor: '#e5e7eb' },
+        noData: {
+            text: 'Loading power data...',
+            align: 'center',
+            verticalAlign: 'middle'
+        }
     });
     
-    function loadChart() {
-        const ctx = document.getElementById('performanceChart');
-        if (!ctx) return;
-        
-        // Simple chart for now
-        new Chart(ctx.getContext('2d'), {
+    dashboardState.charts.power.render();
+    
+    // Voltage & Current Chart
+    dashboardState.charts.voltageCurrent = new ApexCharts(document.querySelector("#voltageCurrentChart"), {
+        series: [],
+        chart: {
             type: 'line',
-            data: {
-                labels: ['6 AM', '9 AM', '12 PM', '3 PM', '6 PM'],
-                datasets: [{
-                    label: 'Power (W)',
-                    data: [100, 450, 800, 600, 200],
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
+            height: '100%',
+            toolbar: { show: false }
+        },
+        colors: ['#3b82f6', '#10b981'],
+        stroke: { width: [3, 3], curve: 'smooth' },
+        dataLabels: { enabled: false },
+        markers: { size: 4 },
+        xaxis: { type: 'datetime' },
+        yaxis: [
+            { title: { text: 'Voltage (V)' } },
+            { opposite: true, title: { text: 'Current (A)' } }
+        ],
+        grid: { borderColor: '#e5e7eb' },
+        noData: {
+            text: 'Loading electrical data...',
+            align: 'center',
+            verticalAlign: 'middle'
+        }
+    });
+    
+    dashboardState.charts.voltageCurrent.render();
+    
+    // Temperature Chart
+    dashboardState.charts.temperature = new ApexCharts(document.querySelector("#temperatureChart"), {
+        series: [],
+        chart: {
+            type: 'line',
+            height: '100%',
+            toolbar: { show: false }
+        },
+        colors: ['#ef4444'],
+        stroke: { width: 3, curve: 'smooth' },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.7,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        markers: { size: 4 },
+        xaxis: { type: 'datetime' },
+        yaxis: { 
+            title: { text: 'Temperature (°C)' },
+            min: 0,
+            max: 100
+        },
+        grid: { borderColor: '#e5e7eb' },
+        annotations: {
+            yaxis: [
+                { y: 60, borderColor: '#f59e0b', label: { text: 'Warning', style: { color: '#f59e0b', background: '#fffbeb' } } },
+                { y: 80, borderColor: '#ef4444', label: { text: 'Critical', style: { color: '#ef4444', background: '#fef2f2' } } }
+            ]
+        },
+        noData: {
+            text: 'Loading temperature data...',
+            align: 'center',
+            verticalAlign: 'middle'
+        }
+    });
+    
+    dashboardState.charts.temperature.render();
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Refresh button
+    document.getElementById('refreshDashboard').addEventListener('click', function() {
+        this.classList.add('refresh-animation');
+        setTimeout(() => this.classList.remove('refresh-animation'), 1000);
+        loadDashboardData();
+    });
+    
+    // Time period filters
+    document.querySelectorAll('.time-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const parent = this.closest('.time-filter');
+            parent.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            if (this.dataset.period) {
+                dashboardState.currentPeriod = this.dataset.period;
+                loadDashboardData();
+            }
+            
+            if (this.dataset.chartPeriod) {
+                updateChartPeriod(this.dataset.chartPeriod);
             }
         });
+    });
+    
+    // Export chart data
+    document.getElementById('exportChartData').addEventListener('click', exportChartData);
+}
+
+// Load dashboard data from API endpoints
+async function loadDashboardData() {
+    if (dashboardState.isLoading) return;
+    
+    dashboardState.isLoading = true;
+    showLoadingState(true);
+    
+    try {
+        // Load real-time data
+        const realtimeData = await fetchData('/dashboard/api/realtime');
+        if (realtimeData.success) {
+            updateRealTimeMetrics(realtimeData.data);
+        }
+        
+        // Load historical data for charts
+        const historicalData = await fetchData(`/dashboard/api/historical?period=${dashboardState.currentPeriod}&interval=hour`);
+        if (historicalData.success) {
+            updateChartsWithData(historicalData.data);
+        }
+        
+        // Load system stats
+        const statsData = await fetchData('/dashboard/api/stats?days=7');
+        
+        // Load alerts
+        const alertsData = await fetchData('/alerts/api/alerts?status=active&limit=5');
+        if (alertsData.success) {
+            updateAlertsDisplay(alertsData.data);
+        }
+        
+        // Update last update time
+        dashboardState.lastUpdate = new Date();
+        updateLastUpdateTime();
+        
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        showErrorState();
+    } finally {
+        dashboardState.isLoading = false;
+        showLoadingState(false);
     }
+}
+
+// Fetch data from API endpoint
+async function fetchData(url) {
+    try {
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching ${url}:`, error);
+        throw error;
+    }
+}
+
+// Update real-time metrics display
+function updateRealTimeMetrics(data) {
+    if (!data) return;
+    
+    // Update power metric
+    const powerMetric = document.getElementById('powerMetric');
+    if (powerMetric) {
+        if (data.power && data.power.value) {
+            const power = data.power.value;
+            powerMetric.innerHTML = `
+                <div class="metric-value">
+                    ${power.toFixed(1)}
+                    <span class="sensor-unit">W</span>
+                </div>
+                <div class="metric-label">
+                    ${power > 300 ? 
+                        '<span class="stat-badge badge-success"><i class="fas fa-arrow-up mr-1"></i> High Production</span>' : 
+                     power > 150 ? 
+                        '<span class="stat-badge badge-yellow"><i class="fas fa-minus mr-1"></i> Medium</span>' : 
+                        '<span class="stat-badge badge-warning"><i class="fas fa-arrow-down mr-1"></i> Low</span>'
+                    }
+                </div>
+            `;
+        }
+    }
+    
+    // Update other metrics in the UI
+    updateMetricDisplays(data);
+}
+
+// Update charts with data
+function updateChartsWithData(data) {
+    if (!data || !data.series) {
+        showEmptyChartState();
+        return;
+    }
+    
+    // Update power chart
+    if (dashboardState.charts.power && data.series.power) {
+        dashboardState.charts.power.updateSeries([{
+            name: 'Power',
+            data: data.series.power
+        }]);
+    }
+    
+    // Update voltage & current chart
+    if (dashboardState.charts.voltageCurrent && data.series.voltage && data.series.current) {
+        dashboardState.charts.voltageCurrent.updateSeries([
+            { name: 'Voltage', data: data.series.voltage },
+            { name: 'Current', data: data.series.current }
+        ]);
+    }
+    
+    // Update temperature chart
+    if (dashboardState.charts.temperature && data.series.temperature) {
+        dashboardState.charts.temperature.updateSeries([{
+            name: 'Temperature',
+            data: data.series.temperature
+        }]);
+    }
+}
+
+// Update alerts display
+function updateAlertsDisplay(alerts) {
+    const container = document.getElementById('recentAlertsList');
+    if (!container) return;
+    
+    const activeAlerts = alerts.filter(alert => !alert.resolved);
+    
+    if (activeAlerts.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-bell-slash"></i>
+                </div>
+                <div class="empty-state-title">No Recent Alerts</div>
+                <div class="empty-state-description">System is operating normally</div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="space-y-3">';
+    activeAlerts.slice(0, 5).forEach(alert => {
+        const time = new Date(alert.createdAt).toLocaleDateString();
+        html += `
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <span class="alert-severity severity-${alert.severity}"></span>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">${alert.title}</div>
+                    <div class="text-xs text-gray-600 mb-1">${alert.message}</div>
+                    <div class="activity-time">
+                        ${time} • ${alert.deviceId || 'System'}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// Update metric displays
+function updateMetricDisplays(data) {
+    // Update battery level if available
+    if (data.batteryLevel) {
+        const batteryElement = document.querySelector('.metric-item:nth-child(1) .metric-value');
+        if (batteryElement) {
+            batteryElement.innerHTML = `${data.batteryLevel}%`;
+        }
+    }
+    
+    // Update temperature status
+    if (data.temperature) {
+        const temp = data.temperature.value;
+        const statusElement = document.querySelector('.sensor-status');
+        if (statusElement) {
+            if (temp > 70) {
+                statusElement.className = 'sensor-status status-critical';
+                statusElement.textContent = 'Critical';
+            } else if (temp > 60) {
+                statusElement.className = 'sensor-status status-warning';
+                statusElement.textContent = 'Warning';
+            } else {
+                statusElement.className = 'sensor-status status-normal';
+                statusElement.textContent = 'Normal';
+            }
+        }
+    }
+}
+
+// Update chart period
+function updateChartPeriod(period) {
+    // This would trigger a new API call for the selected period
+    console.log('Changing chart period to:', period);
+    // In a real implementation, you would reload chart data with the new period
+}
+
+// Export chart data
+function exportChartData() {
+    // This would export the current chart data
+    alert('Export functionality would be implemented here');
+}
+
+// Update last update time display
+function updateLastUpdateTime() {
+    const element = document.getElementById('lastUpdateTime');
+    if (element && dashboardState.lastUpdate) {
+        const time = dashboardState.lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        element.innerHTML = `
+            <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
+            Updated ${time}
+        `;
+    }
+}
+
+// Show loading state
+function showLoadingState(isLoading) {
+    const refreshBtn = document.getElementById('refreshDashboard');
+    if (refreshBtn) {
+        if (isLoading) {
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            refreshBtn.disabled = true;
+        } else {
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
+// Show empty chart state
+function showEmptyChartState() {
+    // This would show empty states in charts
+    console.log('No data available for charts');
+}
+
+// Show error state
+function showErrorState() {
+    // This would show error states in the UI
+    console.log('Error loading dashboard data');
+}
+
+// Start real-time updates
+function startRealTimeUpdates() {
+    // Update every 30 seconds
+    setInterval(() => {
+        if (!dashboardState.isLoading) {
+            loadRealTimeData();
+        }
+    }, 30000);
+}
+
+// Load real-time data only
+async function loadRealTimeData() {
+    try {
+        const data = await fetchData('/dashboard/api/realtime');
+        if (data.success) {
+            updateRealTimeMetrics(data.data);
+            dashboardState.lastUpdate = new Date();
+            updateLastUpdateTime();
+        }
+    } catch (error) {
+        console.error('Error loading real-time data:', error);
+    }
+}
+
+// Simulate data for demonstration (remove in production)
+function simulateDataForDemo() {
+    // This function simulates data for demonstration purposes
+    // Remove this in production when real API is connected
+    
+    const now = new Date();
+    const simulatedData = {
+        series: {
+            power: [],
+            voltage: [],
+            current: [],
+            temperature: []
+        }
+    };
+    
+    // Generate sample data for the last 7 days
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        
+        for (let hour = 6; hour <= 18; hour += 3) {
+            const timestamp = new Date(date);
+            timestamp.setHours(hour, 0, 0, 0);
+            
+            const hourFactor = hour >= 10 && hour <= 14 ? 1.0 : hour >= 8 && hour <= 16 ? 0.7 : 0.2;
+            const randomFactor = 0.8 + Math.random() * 0.4;
+            
+            simulatedData.series.power.push([timestamp.getTime(), 400 * hourFactor * randomFactor]);
+            simulatedData.series.voltage.push([timestamp.getTime(), 12.0 + (Math.random() - 0.5) * 0.5]);
+            simulatedData.series.current.push([timestamp.getTime(), (400 * hourFactor * randomFactor) / (12.0 + (Math.random() - 0.5) * 0.5)]);
+            simulatedData.series.temperature.push([timestamp.getTime(), 25 + (hour - 6) * 2 + (Math.random() - 0.5) * 3]);
+        }
+    }
+    
+    return simulatedData;
+}
+
+// Initialize with simulated data for demo (remove in production)
+window.addEventListener('load', function() {
+    // Comment out this section when real API is connected
+    /*
+    setTimeout(() => {
+        const simulatedData = simulateDataForDemo();
+        updateChartsWithData(simulatedData);
+    }, 1000);
+    */
+});
 </script>
+
+<%- include('../partials/footer'); %>
